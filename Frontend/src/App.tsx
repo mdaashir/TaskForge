@@ -1,4 +1,6 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext.tsx';
 import CreateTask from './pages/Admin/CreateTask.tsx';
 import Dashboard from './pages/Admin/Dashboard.tsx';
 import ManageTasks from './pages/Admin/ManageTasks.tsx';
@@ -12,14 +14,15 @@ import PrivateRoute from './routes/PrivateRoute.tsx';
 
 const App = () => {
     return (
-        <div>
+        <AuthProvider>
             <Router>
+                <Toaster position="top-right" />
                 <Routes>
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<SignUp />} />
 
                     {/* Admin Routes */}
-                    <Route element={<PrivateRoute allowedRoles={['admin']} />}>
+                    <Route element={<PrivateRoute allowedRoles={['ADMIN']} />}>
                         <Route path="/admin/dashboard" element={<Dashboard />} />
                         <Route path="/admin/tasks" element={<ManageTasks />} />
                         <Route path="/admin/tasks/create" element={<CreateTask />} />
@@ -27,14 +30,16 @@ const App = () => {
                     </Route>
 
                     {/* User Routes */}
-                    <Route element={<PrivateRoute allowedRoles={['user']} />}>
+                    <Route element={<PrivateRoute allowedRoles={['USER']} />}>
                         <Route path="/user/dashboard" element={<UserDashboard />} />
                         <Route path="/user/tasks" element={<MyTasks />} />
                         <Route path="/user/tasks/details/:id" element={<ViewTaskDetails />} />
                     </Route>
+
+                    <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>
             </Router>
-        </div>
+        </AuthProvider>
     );
 };
 
