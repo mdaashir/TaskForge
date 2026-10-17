@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Priority, Status } from '../enums/enums.ts';
-import { ITask, ITodo } from '../types.ts';
+import type { ITask, ITodo } from '../types.ts';
 
 const todoSchema = new mongoose.Schema<ITodo>(
     {
@@ -12,8 +12,6 @@ const todoSchema = new mongoose.Schema<ITodo>(
     },
     {
         timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true },
     }
 );
 
@@ -25,12 +23,12 @@ const taskSchema = new mongoose.Schema<ITask>(
         priority: {
             type: String,
             enum: Priority.list(),
-            default: Priority.Medium,
+            default: String(Priority.Medium),
         },
         status: {
             type: String,
             enum: Status.list(),
-            default: Status.Assigned,
+            default: String(Status.Assigned),
         },
         dueDate: { type: Date },
         assignedTo: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
@@ -47,11 +45,9 @@ const taskSchema = new mongoose.Schema<ITask>(
     },
     {
         timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true },
     }
 );
 
-const Task = mongoose.model<ITask>('Task', taskSchema);
+const Task = mongoose.model<ITask>('Task', taskSchema, 'tasks');
 
 export default Task;

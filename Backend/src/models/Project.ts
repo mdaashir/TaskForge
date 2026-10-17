@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Priority, State } from '../enums/enums.ts';
-import { IProject } from '../types.ts';
+import type { IProject } from '../types.ts';
 
 const projectSchema = new mongoose.Schema<IProject>(
     {
@@ -12,7 +12,7 @@ const projectSchema = new mongoose.Schema<IProject>(
         status: {
             type: String,
             enum: State.list(),
-            default: State.Active,
+            default: String(State.Active),
         },
         startDate: { type: Date, default: Date.now },
         endDate: { type: Date },
@@ -23,7 +23,7 @@ const projectSchema = new mongoose.Schema<IProject>(
         priority: {
             type: String,
             enum: Priority.list(),
-            default: Priority.Medium,
+            default: String(Priority.Medium),
         },
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -33,11 +33,9 @@ const projectSchema = new mongoose.Schema<IProject>(
     },
     {
         timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true },
     }
 );
 
-const Project = mongoose.model<IProject>('Project', projectSchema);
+const Project = mongoose.model<IProject>('Project', projectSchema, 'projects');
 
 export default Project;

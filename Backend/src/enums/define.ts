@@ -1,4 +1,4 @@
-import { EnumField, EnumType } from '../types.ts';
+import type { EnumField, EnumType } from '../types.ts';
 
 function defineEnum(enumFields: EnumField[]): EnumType {
     const enumType: EnumType = {

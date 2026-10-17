@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { IComment } from '../types.ts';
+import type { IComment } from '../types.ts';
 
 const commentSchema = new mongoose.Schema<IComment>(
     {
@@ -15,11 +15,9 @@ const commentSchema = new mongoose.Schema<IComment>(
     },
     {
         timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true },
     }
 );
 
-const Comment = mongoose.model<IComment>('Comment', commentSchema);
+const Comment = mongoose.model<IComment>('Comment', commentSchema, 'comments');
 
 export default Comment;

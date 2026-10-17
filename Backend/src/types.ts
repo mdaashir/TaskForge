@@ -1,5 +1,6 @@
+import type { Request } from 'express';
+import jwt from 'jsonwebtoken';
 import { Document, Types } from 'mongoose';
-import { State, MemberType, Roles, Entity, Priority, Status } from './enums/enums.ts';
 
 type EnumField = {
     value: string;
@@ -28,9 +29,9 @@ interface IUser extends Document {
     email: string;
     password: string;
     profileImageUrl?: string;
-    memberType: typeof MemberType;
-    roles?: (typeof Roles)[];
-    state: typeof State;
+    memberType: string;
+    roles?: string[];
+    state: string;
     archived?: boolean;
     archivedAt?: Date;
     archivedBy?: Types.ObjectId;
@@ -55,8 +56,8 @@ interface ITask extends Document {
     projectId: Types.ObjectId;
     title: string;
     description?: string;
-    priority: typeof Priority;
-    status: typeof Status;
+    priority: string;
+    status: string;
     dueDate?: Date;
     assignedTo?: Types.ObjectId[];
     createdBy: Types.ObjectId;
@@ -77,14 +78,14 @@ interface IProject extends Document {
     owner: Types.ObjectId;
     members?: Types.ObjectId[];
     tasks?: Types.ObjectId[];
-    status: typeof Status;
+    status: string;
     startDate: Date;
     endDate?: Date;
     progress: number;
     attachments?: Types.ObjectId[];
     comments?: Types.ObjectId[];
     tags?: string[];
-    priority: typeof Priority;
+    priority: string;
     createdBy: Types.ObjectId;
     updatedBy?: Types.ObjectId;
     archived?: boolean;
@@ -123,7 +124,7 @@ interface IFile extends Document {
 interface IAuditLog extends Document {
     userId: Types.ObjectId;
     action: string;
-    entity: typeof Entity;
+    entity: string;
     targetId: Types.ObjectId;
     newData?: object;
     oldData?: object;
@@ -140,7 +141,7 @@ interface IWorkFlow extends Document {
     members?: Types.ObjectId[];
     project?: Types.ObjectId[];
     progress: number;
-    status: typeof Status;
+    status: string;
     createdBy: Types.ObjectId;
     updatedBy?: Types.ObjectId;
     children?: Types.ObjectId[];
@@ -149,10 +150,10 @@ interface IWorkFlow extends Document {
 interface INotification extends Document {
     fromId: Types.ObjectId;
     toId: Types.ObjectId;
-    entity: typeof Entity;
+    entity: string;
     message?: string;
-    status?: typeof Status;
-    priority?: typeof Priority;
+    status?: string;
+    priority?: string;
     read?: IRead[];
     readCount?: number;
 }
@@ -165,7 +166,15 @@ interface IRead extends Document {
     seenAt: Date;
 }
 
-export {
+interface RequestWithUser extends Request {
+    user?: IUser;
+}
+
+interface JwtPayloadWithId extends jwt.JwtPayload {
+    id: Types.ObjectId;
+}
+
+export type {
     EnumField,
     EnumType,
     IUser,
@@ -178,4 +187,6 @@ export {
     IWorkFlow,
     INotification,
     IRead,
+    RequestWithUser,
+    JwtPayloadWithId,
 };

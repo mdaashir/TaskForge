@@ -1,32 +1,65 @@
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
-import { connectDB } from './config/db.ts';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import connectDB from './config/db.ts';
+import authRoutes from './routes/authRoutes.ts';
 
 dotenv.config();
 
+const PREFIX = process.env.PREFIX || '/api';
+
 const app = express();
 
-// Middleware to handle CORS
+// Security
+app.use(helmet());
+
+// CORS
 app.use(
     cors({
-        origin: process.env.CLIENT_URL || '*',
+        origin: process.env.CLIENT_URL || 'http://localhost:5173',
         methods: ['GET', 'POST', 'PUT', 'DELETE'],
         allowedHeaders: ['Content-Type', 'Authorization'],
+        credentials: true,
     })
 );
 
-// Database Connection
-connectDB().then();
-
-// Middleware
+// Body & cookie parsing
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Rate limiting
+app.use(
+    PREFIX,
+    rateLimit({
+        windowMs: 15 * 60 * 1000,
+        max: 300,
+        standardHeaders: true,
+        legacyHeaders: false,
+    })
+);
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: 'Too many attempts, please try again later.' },
+});
+app.use(`${PREFIX}/auth/login`, authLimiter);
+app.use(`${PREFIX}/auth/register`, authLimiter);
+
+// Database Connection
+void connectDB();
 
 // Routes
-// app.use('/api/auth', authRoutes);
-// app.use('/api/users', userRoutes);
-// app.use('api/tasks', taskRoutes);
-// app.use('api/reports', reportRoutes);
+app.use(`${PREFIX}/auth`, authRoutes);
+// app.use(`${PREFIX}/users`, userRoutes);
+// app.use(`${PREFIX}/tasks`, taskRoutes);
+// app.use(`${PREFIX}/reports`, reportRoutes);
 
 // Start Server
 const PORT = process.env.PORT || 5000;
