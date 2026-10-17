@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Actions, Entity } from '../enums/enums.ts';
-import { IAuditLog } from '../types.ts';
+import type { IAuditLog } from '../types.ts';
 
 const auditLogSchema = new mongoose.Schema<IAuditLog>(
     {
@@ -16,11 +16,9 @@ const auditLogSchema = new mongoose.Schema<IAuditLog>(
     },
     {
         timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true },
     }
 );
 
-const AuditLog = mongoose.model<IAuditLog>('AuditLog', auditLogSchema);
+const AuditLog = mongoose.model<IAuditLog>('AuditLog', auditLogSchema, 'auditLogs');
 
 export default AuditLog;

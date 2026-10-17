@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Entity, Status, Priority } from '../enums/enums.ts';
-import { INotification, IRead } from '../types.ts';
+import type { INotification, IRead } from '../types.ts';
 
 const readSchema = new mongoose.Schema<IRead>(
     {
@@ -12,8 +12,6 @@ const readSchema = new mongoose.Schema<IRead>(
     },
     {
         timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true },
     }
 );
 
@@ -30,11 +28,13 @@ const notificationSchema = new mongoose.Schema<INotification>(
     },
     {
         timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true },
     }
 );
 
-const Notification = mongoose.model<INotification>('Notification', notificationSchema);
+const Notification = mongoose.model<INotification>(
+    'Notification',
+    notificationSchema,
+    'notifications'
+);
 
 export default Notification;

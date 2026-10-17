@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { Status } from '../enums/enums.ts';
-import { IWorkFlow } from '../types.ts';
+import type { IWorkFlow } from '../types.ts';
 
 const workFlowSchema = new mongoose.Schema<IWorkFlow>(
     {
@@ -14,7 +14,7 @@ const workFlowSchema = new mongoose.Schema<IWorkFlow>(
         status: {
             type: String,
             enum: Status.list(),
-            default: Status.Active,
+            default: String(Status.Active),
         },
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -22,11 +22,9 @@ const workFlowSchema = new mongoose.Schema<IWorkFlow>(
     },
     {
         timestamps: true,
-        toJSON: { virtuals: true },
-        toObject: { virtuals: true },
     }
 );
 
-const WorkFlow = mongoose.model<IWorkFlow>('WorkFlow', workFlowSchema);
+const WorkFlow = mongoose.model<IWorkFlow>('WorkFlow', workFlowSchema, 'workflows');
 
 export default WorkFlow;

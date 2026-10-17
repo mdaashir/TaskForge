@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { IFile } from '../types.ts';
+import type { IFile } from '../types.ts';
 
 const fileSchema = new mongoose.Schema<IFile>(
     {
@@ -24,6 +24,6 @@ const fileSchema = new mongoose.Schema<IFile>(
     }
 );
 
-const File = mongoose.model<IFile>('File', fileSchema);
+const File = mongoose.model<IFile>('File', fileSchema, 'files');
 
 export default File;
