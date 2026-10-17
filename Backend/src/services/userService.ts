@@ -1,8 +1,38 @@
 import bcrypt from 'bcryptjs';
-import { Types } from 'mongoose';
+import { Types, type FilterQuery } from 'mongoose';
 import userModel from '../models/User.ts';
 import type { IUser } from '../types.ts';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwtUtils.ts';
+
+async function getAll(options: { page?: number; limit?: number; search?: string } = {}) {
+    try {
+        const page = Math.max(1, options.page ?? 1);
+        const limit = Math.min(100, Math.max(1, options.limit ?? 20));
+        const filter: FilterQuery<IUser> = {};
+
+        if (options.search) {
+            const escaped = options.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const pattern = new RegExp(escaped, 'i');
+            filter.$or = [{ name: pattern }, { email: pattern }];
+        }
+
+        const [users, total] = await Promise.all([
+            userModel
+                .find(filter)
+                .select('-password')
+                .sort({ createdAt: -1 })
+                .skip((page - 1) * limit)
+                .limit(limit),
+            userModel.countDocuments(filter),
+        ]);
+
+        return { users, total, page, limit };
+    } catch (error) {
+        return error instanceof Error
+            ? { message: 'Error fetching users', error: error.message }
+            : { message: 'An unknown error occurred while fetching users.' };
+    }
+}
 
 async function getOne(userId: Types.ObjectId, fields: string[] = []) {
     try {
@@ -87,7 +117,7 @@ async function deleteUser(userId: Types.ObjectId) {
         if (!Types.ObjectId.isValid(userId)) return { message: 'Invalid user ID.' };
         const result = await userModel.findByIdAndDelete(userId);
         if (!result) return { message: 'User not found.' };
-        return { message: 'User deleted successfully.' };
+        return { success: true as const };
     } catch (error) {
         return error instanceof Error
             ? { message: 'Error deleting user', error: error.message }
@@ -95,4 +125,4 @@ async function deleteUser(userId: Types.ObjectId) {
     }
 }
 
-export default { getOne, createUser, login, updateUser, deleteUser };
+export default { getAll, getOne, createUser, login, updateUser, deleteUser };
