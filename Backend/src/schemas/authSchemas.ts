@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const password = z
+export const passwordSchema = z
     .string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/[A-Za-z]/, 'Password must contain a letter')
@@ -10,7 +10,7 @@ export const registerSchema = z.object({
     user: z.object({
         name: z.string().trim().min(1, 'Name is required'),
         email: z.string().trim().toLowerCase().email('A valid email is required'),
-        password,
+        password: passwordSchema,
     }),
 });
 
@@ -24,7 +24,7 @@ export const updateProfileSchema = z.object({
         .object({
             name: z.string().trim().min(1, 'Name cannot be empty').optional(),
             email: z.string().trim().toLowerCase().email('A valid email is required').optional(),
-            password: password.optional(),
+            password: passwordSchema.optional(),
             profileImageUrl: z.string().url('A valid url is required').optional(),
             tags: z.array(z.string().trim().min(1)).optional(),
         })
