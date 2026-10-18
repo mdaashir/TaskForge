@@ -4,6 +4,10 @@ export type ProjectStatus = 'AS' | 'PE' | 'IP' | 'OH' | 'CAN' | 'COM';
 
 export type ProjectPriority = 'High' | 'Med' | 'Low';
 
+export type TaskStatus = ProjectStatus;
+
+export type TaskPriority = ProjectPriority;
+
 export interface User {
     _id: string;
     name: string;
@@ -44,6 +48,12 @@ export interface UserInput {
     state?: string;
 }
 
+export interface ProjectRef {
+    _id: string;
+    name: string;
+    status: string;
+}
+
 export interface Project {
     _id: string;
     name: string;
@@ -75,6 +85,48 @@ export interface ProjectInput {
     priority?: ProjectPriority;
     startDate?: string;
     endDate?: string;
+    progress?: number;
+    tags?: string[];
+}
+
+export interface TodoItem {
+    _id?: string;
+    text: string;
+    completed: boolean;
+}
+
+export interface Task {
+    _id: string;
+    projectId: ProjectRef | string;
+    title: string;
+    description?: string;
+    priority: TaskPriority;
+    status: TaskStatus;
+    dueDate?: string;
+    assignedTo?: (UserOption | string)[];
+    createdBy?: UserOption | string;
+    todoChecklist?: TodoItem[];
+    progress: number;
+    tags?: string[];
+    archived?: boolean;
+}
+
+export interface TaskListResponse {
+    tasks: Task[];
+    total: number;
+    page: number;
+    limit: number;
+}
+
+export interface TaskInput {
+    projectId?: string;
+    title?: string;
+    description?: string;
+    priority?: TaskPriority;
+    status?: TaskStatus;
+    dueDate?: string;
+    assignedTo?: string[];
+    todoChecklist?: { text: string; completed?: boolean }[];
     progress?: number;
     tags?: string[];
 }

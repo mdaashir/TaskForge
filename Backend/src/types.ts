@@ -44,7 +44,7 @@ interface IUser extends Document {
     updatedBy?: Types.ObjectId;
 }
 
-interface ITodo extends Document {
+interface ITodo {
     text: string;
     completed: boolean;
     createdBy: Types.ObjectId;

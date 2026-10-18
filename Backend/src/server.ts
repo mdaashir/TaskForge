@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import connectDB from './config/db.ts';
 import authRoutes from './routes/authRoutes.ts';
 import projectRoutes from './routes/projectRoutes.ts';
+import taskRoutes from './routes/taskRoutes.ts';
 import userRoutes from './routes/userRoutes.ts';
 
 dotenv.config();
@@ -61,7 +62,7 @@ void connectDB();
 app.use(`${PREFIX}/auth`, authRoutes);
 app.use(`${PREFIX}/users`, userRoutes);
 app.use(`${PREFIX}/projects`, projectRoutes);
-// app.use(`${PREFIX}/tasks`, taskRoutes);
+app.use(`${PREFIX}/tasks`, taskRoutes);
 // app.use(`${PREFIX}/reports`, reportRoutes);
 
 // Start Server

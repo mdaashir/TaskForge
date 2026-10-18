@@ -19,3 +19,12 @@ export const homeForRole = (memberType?: MemberType): string => {
     if (memberType === 'USER') return '/user/dashboard';
     return '/projects';
 };
+
+export const refId = (value?: { _id: string } | string): string =>
+    !value ? '' : typeof value === 'string' ? value : value._id;
+
+export const refName = (value?: { name: string } | string): string =>
+    !value ? '—' : typeof value === 'string' ? value : value.name;
+
+export const labelOf = (options: { value: string; label: string }[], value: string): string =>
+    options.find((option) => option.value === value)?.label ?? value;
