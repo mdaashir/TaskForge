@@ -12,6 +12,7 @@ export const API_PATHS = {
         profile: `${AUTH}/profile`,
         profileImage: (value: string) => `${AUTH}/profile/image/${encodeURIComponent(value)}`,
     },
+    dashboard: '/dashboard',
     users: {
         list: USERS,
         options: `${USERS}/options`,

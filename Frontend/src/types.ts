@@ -51,7 +51,7 @@ export interface UserInput {
 export interface ProjectRef {
     _id: string;
     name: string;
-    status: string;
+    status?: string;
 }
 
 export interface Project {
@@ -109,6 +109,8 @@ export interface Task {
     progress: number;
     tags?: string[];
     archived?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface TaskListResponse {
@@ -129,6 +131,25 @@ export interface TaskInput {
     todoChecklist?: { text: string; completed?: boolean }[];
     progress?: number;
     tags?: string[];
+}
+
+export interface StatusCount {
+    status: string;
+    count: number;
+}
+
+export interface DashboardResponse {
+    scope: 'admin' | 'member';
+    totals: {
+        users: number | null;
+        projects: number;
+        tasks: number;
+        assignedToMe: number;
+        overdue: number;
+    };
+    tasksByStatus: StatusCount[];
+    projectsByStatus: StatusCount[];
+    recentTasks: Task[];
 }
 
 export interface PrivateRouteProps {

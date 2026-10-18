@@ -3,6 +3,7 @@ import projectModel from '../models/Project.ts';
 import taskModel from '../models/Task.ts';
 import type { ITask, IUser } from '../types.ts';
 import { canViewProject, idOf, isAdmin } from '../utils/access.ts';
+import projectService from './projectService.ts';
 
 const TASK_PEOPLE = 'name email';
 
@@ -19,13 +20,6 @@ const withPeople = () =>
         .populate('projectId', 'name status')
         .populate('assignedTo', TASK_PEOPLE)
         .sort({ createdAt: -1 });
-
-async function visibleProjectIds(actor: IUser) {
-    const projects = await projectModel
-        .find({ $or: [{ owner: actor._id }, { members: actor._id }] })
-        .select('_id');
-    return projects.map((project) => project._id as Types.ObjectId);
-}
 
 async function getAll(
     actor: IUser,
@@ -44,7 +38,7 @@ async function getAll(
 
         const conditions: FilterQuery<ITask>[] = [{ archived: { $ne: true } }];
         if (!isAdmin(actor)) {
-            conditions.push({ projectId: { $in: await visibleProjectIds(actor) } });
+            conditions.push({ projectId: { $in: await projectService.visibleIds(actor) } });
         }
         if (options.projectId) conditions.push({ projectId: options.projectId });
         if (options.status) conditions.push({ status: options.status });

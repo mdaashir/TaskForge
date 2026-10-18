@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import connectDB from './config/db.ts';
 import authRoutes from './routes/authRoutes.ts';
+import dashboardRoutes from './routes/dashboardRoutes.ts';
 import projectRoutes from './routes/projectRoutes.ts';
 import taskRoutes from './routes/taskRoutes.ts';
 import userRoutes from './routes/userRoutes.ts';
@@ -60,6 +61,7 @@ void connectDB();
 
 // Routes
 app.use(`${PREFIX}/auth`, authRoutes);
+app.use(`${PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${PREFIX}/users`, userRoutes);
 app.use(`${PREFIX}/projects`, projectRoutes);
 app.use(`${PREFIX}/tasks`, taskRoutes);
