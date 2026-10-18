@@ -1,6 +1,7 @@
 const AUTH = '/auth';
 const USERS = '/users';
 const PROJECTS = '/projects';
+const TASKS = '/tasks';
 
 export const API_PATHS = {
     auth: {
@@ -19,5 +20,10 @@ export const API_PATHS = {
     projects: {
         list: PROJECTS,
         byId: (id: string) => `${PROJECTS}/${id}`,
+    },
+    tasks: {
+        list: TASKS,
+        mine: `${TASKS}/mine`,
+        byId: (id: string) => `${TASKS}/${id}`,
     },
 } as const;
