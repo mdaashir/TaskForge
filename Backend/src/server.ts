@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import connectDB from './config/db.ts';
 import authRoutes from './routes/authRoutes.ts';
+import userRoutes from './routes/userRoutes.ts';
 
 dotenv.config();
 
@@ -57,7 +58,7 @@ void connectDB();
 
 // Routes
 app.use(`${PREFIX}/auth`, authRoutes);
-// app.use(`${PREFIX}/users`, userRoutes);
+app.use(`${PREFIX}/users`, userRoutes);
 // app.use(`${PREFIX}/tasks`, taskRoutes);
 // app.use(`${PREFIX}/reports`, reportRoutes);
 

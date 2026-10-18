@@ -17,6 +17,22 @@ export interface AuthResponse {
     accessToken: string;
 }
 
+export interface UserListResponse {
+    users: User[];
+    total: number;
+    page: number;
+    limit: number;
+}
+
+export interface UserInput {
+    name?: string;
+    email?: string;
+    password?: string;
+    memberType?: MemberType;
+    roles?: string[];
+    state?: string;
+}
+
 export interface PrivateRouteProps {
     allowedRoles: MemberType[];
 }
