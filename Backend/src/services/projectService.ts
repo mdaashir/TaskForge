@@ -9,6 +9,13 @@ const accessDenied = () => ({ message: 'Access denied.', forbidden: true as cons
 const notFound = () => ({ message: 'Project not found.' });
 const invalidId = () => ({ message: 'Invalid project ID.' });
 
+async function visibleIds(actor: IUser) {
+    const projects = await projectModel
+        .find({ $or: [{ owner: actor._id }, { members: actor._id }] })
+        .select('_id');
+    return projects.map((project) => project._id as Types.ObjectId);
+}
+
 async function getAll(
     actor: IUser,
     options: { page?: number; limit?: number; search?: string; status?: string } = {}
@@ -122,4 +129,4 @@ async function remove(projectId: Types.ObjectId, actor: IUser) {
     }
 }
 
-export default { getAll, getOne, create, update, remove };
+export default { getAll, visibleIds, getOne, create, update, remove };
