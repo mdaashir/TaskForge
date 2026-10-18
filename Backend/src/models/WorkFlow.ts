@@ -14,7 +14,7 @@ const workFlowSchema = new mongoose.Schema<IWorkFlow>(
         status: {
             type: String,
             enum: Status.list(),
-            default: String(Status.Active),
+            default: String(Status.Pending),
         },
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
