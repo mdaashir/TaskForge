@@ -1,25 +1,9 @@
 import { Types, type FilterQuery } from 'mongoose';
-import { MemberType } from '../enums/enums.ts';
 import projectModel from '../models/Project.ts';
 import type { IProject, IUser } from '../types.ts';
+import { canDeleteProject, canViewProject, isAdmin } from '../utils/access.ts';
 
 const PEOPLE = 'name email memberType';
-
-const idOf = (value: unknown): string => {
-    if (value && typeof value === 'object' && '_id' in value) {
-        return String((value as { _id: unknown })._id);
-    }
-    return String(value);
-};
-
-const isAdmin = (actor: IUser) => actor.memberType === MemberType.Admin;
-const isOwner = (project: IProject, actor: IUser) => idOf(project.owner) === idOf(actor._id);
-const isMember = (project: IProject, actor: IUser) =>
-    (project.members ?? []).some((member) => idOf(member) === idOf(actor._id));
-
-const canView = (project: IProject, actor: IUser) =>
-    isAdmin(actor) || isOwner(project, actor) || isMember(project, actor);
-const canDelete = (project: IProject, actor: IUser) => isAdmin(actor) || isOwner(project, actor);
 
 const accessDenied = () => ({ message: 'Access denied.', forbidden: true as const });
 const notFound = () => ({ message: 'Project not found.' });
@@ -74,7 +58,7 @@ async function getOne(projectId: Types.ObjectId, actor: IUser) {
             .populate('owner', PEOPLE)
             .populate('members', PEOPLE);
         if (!project) return notFound();
-        if (!canView(project, actor)) return accessDenied();
+        if (!canViewProject(project, actor)) return accessDenied();
         return { project };
     } catch (error) {
         return error instanceof Error
@@ -105,7 +89,7 @@ async function update(projectId: Types.ObjectId, data: Partial<IProject>, actor:
         if (!Types.ObjectId.isValid(projectId)) return invalidId();
         const project = await projectModel.findById(projectId);
         if (!project) return notFound();
-        if (!canView(project, actor)) return accessDenied();
+        if (!canViewProject(project, actor)) return accessDenied();
 
         const patch: Partial<IProject> = { ...data };
         if (!isAdmin(actor)) delete patch.owner;
@@ -127,7 +111,7 @@ async function remove(projectId: Types.ObjectId, actor: IUser) {
         if (!Types.ObjectId.isValid(projectId)) return invalidId();
         const project = await projectModel.findById(projectId);
         if (!project) return notFound();
-        if (!canDelete(project, actor)) return accessDenied();
+        if (!canDeleteProject(project, actor)) return accessDenied();
 
         await project.deleteOne();
         return { success: true as const };
