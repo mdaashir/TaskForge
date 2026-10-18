@@ -125,4 +125,18 @@ async function deleteUser(userId: Types.ObjectId) {
     }
 }
 
-export default { getAll, getOne, createUser, login, updateUser, deleteUser };
+async function getOptions() {
+    try {
+        const users = await userModel
+            .find({ archived: { $ne: true } })
+            .select('name email memberType')
+            .sort({ name: 1 });
+        return { users };
+    } catch (error) {
+        return error instanceof Error
+            ? { message: 'Error fetching user options', error: error.message }
+            : { message: 'An unknown error occurred while fetching user options.' };
+    }
+}
+
+export default { getAll, getOptions, getOne, createUser, login, updateUser, deleteUser };

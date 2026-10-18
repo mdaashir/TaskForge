@@ -1,4 +1,5 @@
 import axios from 'axios';
+import type { MemberType } from '../types.ts';
 
 export function getErrorMessage(error: unknown): string {
     if (axios.isAxiosError(error)) {
@@ -12,3 +13,9 @@ export function getErrorMessage(error: unknown): string {
     }
     return error instanceof Error ? error.message : 'Something went wrong';
 }
+
+export const homeForRole = (memberType?: MemberType): string => {
+    if (memberType === 'ADMIN') return '/admin/dashboard';
+    if (memberType === 'USER') return '/user/dashboard';
+    return '/projects';
+};

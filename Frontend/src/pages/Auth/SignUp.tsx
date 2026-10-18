@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/useAuth.ts';
-import { getErrorMessage } from '../../utils/helper.ts';
+import { getErrorMessage, homeForRole } from '../../utils/helper.ts';
 
 const SignUp = () => {
     const { register } = useAuth();
@@ -23,9 +23,7 @@ const SignUp = () => {
         try {
             const user = await register(name, email, password);
             toast.success('Account created!');
-            navigate(user.memberType === 'ADMIN' ? '/admin/dashboard' : '/user/dashboard', {
-                replace: true,
-            });
+            navigate(homeForRole(user.memberType), { replace: true });
         } catch (error) {
             toast.error(getErrorMessage(error));
         } finally {

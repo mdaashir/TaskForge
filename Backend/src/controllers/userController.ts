@@ -93,4 +93,19 @@ async function deleteUser(req: Request, res: Response) {
     }
 }
 
-export default { listUsers, getUserById, createUser, updateUser, deleteUser };
+async function listUserOptions(_req: Request, res: Response) {
+    try {
+        const result = await userService.getOptions();
+        if ('message' in result)
+            return res.status('error' in result ? 500 : 400).json({ message: result.message });
+
+        return res.status(200).json({ users: result.users });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error',
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
+export default { listUsers, listUserOptions, getUserById, createUser, updateUser, deleteUser };

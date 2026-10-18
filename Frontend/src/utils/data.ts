@@ -21,3 +21,18 @@ export const ROLE_OPTIONS: { value: string; label: string }[] = [
     { value: 'TEST', label: 'Tester' },
     { value: 'OPS', label: 'DevOps' },
 ];
+
+export const STATUS_OPTIONS: { value: string; label: string }[] = [
+    { value: 'AS', label: 'Assigned' },
+    { value: 'PE', label: 'Pending' },
+    { value: 'IP', label: 'In Progress' },
+    { value: 'OH', label: 'On Hold' },
+    { value: 'CAN', label: 'Cancelled' },
+    { value: 'COM', label: 'Completed' },
+];
+
+export const PRIORITY_OPTIONS: { value: string; label: string }[] = [
+    { value: 'High', label: 'High' },
+    { value: 'Med', label: 'Medium' },
+    { value: 'Low', label: 'Low' },
+];

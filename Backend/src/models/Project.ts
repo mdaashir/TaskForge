@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { Priority, State } from '../enums/enums.ts';
+import { Priority, Status } from '../enums/enums.ts';
 import type { IProject } from '../types.ts';
 
 const projectSchema = new mongoose.Schema<IProject>(
@@ -11,8 +11,8 @@ const projectSchema = new mongoose.Schema<IProject>(
         tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }],
         status: {
             type: String,
-            enum: State.list(),
-            default: String(State.Active),
+            enum: Status.list(),
+            default: String(Status.Pending),
         },
         startDate: { type: Date, default: Date.now },
         endDate: { type: Date },
