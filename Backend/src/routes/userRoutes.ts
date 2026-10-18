@@ -6,6 +6,10 @@ import { createUserSchema, updateUserSchema } from '../schemas/userSchemas.ts';
 
 const router = Router();
 
+const anyAuthenticated = [Role.Admin, Role.Viewer, Role.User];
+
+router.get('/options', authorize(anyAuthenticated), user.listUserOptions);
+
 router.use(authorize([Role.Admin]));
 
 router.get('/', user.listUsers);
