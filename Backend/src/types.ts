@@ -70,6 +70,8 @@ interface ITask extends Document {
     todoChecklist?: ITodo[];
     progress: number;
     tags?: string[];
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 interface IProject extends Document {
@@ -91,6 +93,8 @@ interface IProject extends Document {
     archived?: boolean;
     archivedAt?: Date;
     archivedBy?: Types.ObjectId;
+    createdAt?: Date;
+    updatedAt?: Date;
 }
 
 interface IComment extends Document {
