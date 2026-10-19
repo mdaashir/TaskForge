@@ -1,7 +1,6 @@
 import { useEffect, useState, type ComponentType } from 'react';
 import toast from 'react-hot-toast';
 import { FiAlertTriangle, FiCheckSquare, FiFolder, FiUserCheck, FiUsers } from 'react-icons/fi';
-import moment from 'moment';
 import {
     Bar,
     BarChart,
@@ -15,7 +14,7 @@ import type { DashboardResponse } from '../types.ts';
 import { API_PATHS } from '../utils/apiPaths.ts';
 import axiosInstance from '../utils/axiosInstance.ts';
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '../utils/data.ts';
-import { getErrorMessage, labelOf } from '../utils/helper.ts';
+import { getErrorMessage, labelOf, relativeTime } from '../utils/helper.ts';
 
 const StatCard = ({
     label,
@@ -148,7 +147,7 @@ const DashboardView = ({ title }: { title: string }) => {
                                         {labelOf(PRIORITY_OPTIONS, task.priority)}
                                     </td>
                                     <td className="px-5 py-3 text-slate-500">
-                                        {task.updatedAt ? moment(task.updatedAt).fromNow() : '—'}
+                                        {relativeTime(task.updatedAt)}
                                     </td>
                                 </tr>
                             ))
