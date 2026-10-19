@@ -1,5 +1,7 @@
+import { Suspense } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth.ts';
+import PageFallback from './PageFallback.tsx';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
     `rounded-lg px-3 py-2 text-sm font-medium ${
@@ -52,7 +54,9 @@ const AppLayout = () => {
                 </div>
             </header>
             <main className="pb-10">
-                <Outlet />
+                <Suspense fallback={<PageFallback />}>
+                    <Outlet />
+                </Suspense>
             </main>
         </div>
     );
