@@ -16,27 +16,34 @@ async function visibleIds(actor: IUser) {
     return projects.map((project) => project._id as Types.ObjectId);
 }
 
+interface ProjectQuery {
+    search?: string;
+    status?: string;
+}
+
+function buildFilter(actor: IUser, options: ProjectQuery = {}): FilterQuery<IProject> {
+    const conditions: FilterQuery<IProject>[] = [{ archived: { $ne: true } }];
+    if (!isAdmin(actor)) {
+        conditions.push({ $or: [{ owner: actor._id }, { members: actor._id }] });
+    }
+    if (options.search) {
+        const escaped = options.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pattern = new RegExp(escaped, 'i');
+        conditions.push({ $or: [{ name: pattern }, { description: pattern }] });
+    }
+    if (options.status) conditions.push({ status: options.status });
+
+    return conditions.length === 1 ? conditions[0] : { $and: conditions };
+}
+
 async function getAll(
     actor: IUser,
-    options: { page?: number; limit?: number; search?: string; status?: string } = {}
+    options: ProjectQuery & { page?: number; limit?: number } = {}
 ) {
     try {
         const page = Math.max(1, options.page ?? 1);
         const limit = Math.min(100, Math.max(1, options.limit ?? 20));
-
-        const conditions: FilterQuery<IProject>[] = [{ archived: { $ne: true } }];
-        if (!isAdmin(actor)) {
-            conditions.push({ $or: [{ owner: actor._id }, { members: actor._id }] });
-        }
-        if (options.search) {
-            const escaped = options.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const pattern = new RegExp(escaped, 'i');
-            conditions.push({ $or: [{ name: pattern }, { description: pattern }] });
-        }
-        if (options.status) conditions.push({ status: options.status });
-
-        const filter: FilterQuery<IProject> =
-            conditions.length === 1 ? conditions[0] : { $and: conditions };
+        const filter = buildFilter(actor, options);
 
         const [projects, total] = await Promise.all([
             projectModel
@@ -129,4 +136,4 @@ async function remove(projectId: Types.ObjectId, actor: IUser) {
     }
 }
 
-export default { getAll, visibleIds, getOne, create, update, remove };
+export default { getAll, buildFilter, visibleIds, getOne, create, update, remove };
