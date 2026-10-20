@@ -174,6 +174,18 @@ export interface TaskComment {
     updatedAt?: string;
 }
 
+export interface AppNotification {
+    _id: string;
+    message?: string;
+    entity: string;
+    targetId?: string;
+    priority?: string;
+    status?: string;
+    readCount: number;
+    fromId?: UserOption | string;
+    createdAt?: string;
+}
+
 export interface PrivateRouteProps {
     allowedRoles: MemberType[];
 }
