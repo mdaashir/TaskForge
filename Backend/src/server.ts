@@ -9,6 +9,7 @@ import authRoutes from './routes/authRoutes.ts';
 import commentRoutes from './routes/commentRoutes.ts';
 import dashboardRoutes from './routes/dashboardRoutes.ts';
 import fileRoutes from './routes/fileRoutes.ts';
+import notificationRoutes from './routes/notificationRoutes.ts';
 import projectRoutes from './routes/projectRoutes.ts';
 import reportRoutes from './routes/reportRoutes.ts';
 import taskRoutes from './routes/taskRoutes.ts';
@@ -70,6 +71,7 @@ app.use(`${PREFIX}/projects`, projectRoutes);
 app.use(`${PREFIX}/tasks`, taskRoutes);
 app.use(`${PREFIX}/comments`, commentRoutes);
 app.use(`${PREFIX}/files`, fileRoutes);
+app.use(`${PREFIX}/notifications`, notificationRoutes);
 app.use(`${PREFIX}/reports`, reportRoutes);
 
 // Start Server
