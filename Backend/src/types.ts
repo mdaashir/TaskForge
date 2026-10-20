@@ -154,6 +154,7 @@ interface IWorkFlow extends Document {
 interface INotification extends Document {
     fromId: Types.ObjectId;
     toId: Types.ObjectId;
+    targetId?: Types.ObjectId;
     entity: string;
     message?: string;
     status?: string;

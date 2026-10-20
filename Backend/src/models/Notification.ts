@@ -19,6 +19,7 @@ const notificationSchema = new mongoose.Schema<INotification>(
     {
         fromId: { type: mongoose.Schema.Types.ObjectId, required: true },
         toId: { type: mongoose.Schema.Types.ObjectId, required: true },
+        targetId: { type: mongoose.Schema.Types.ObjectId },
         entity: { type: String, enum: Entity.list(), required: true },
         message: { type: String },
         status: { type: String, enum: Status.list() },

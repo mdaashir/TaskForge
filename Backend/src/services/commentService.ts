@@ -1,9 +1,11 @@
 import { Types, type HydratedDocument } from 'mongoose';
+import { Entity, Priority } from '../enums/enums.ts';
 import commentModel from '../models/Comment.ts';
 import projectModel from '../models/Project.ts';
 import taskModel from '../models/Task.ts';
 import type { IComment, IProject, ITask, IUser } from '../types.ts';
 import { canViewProject, idOf, isAdmin } from '../utils/access.ts';
+import notificationService from './notificationService.ts';
 
 type CommentView = Record<string, unknown> & { replies: CommentView[] };
 
@@ -102,6 +104,17 @@ async function create(taskId: string, data: { text: string; parentId?: string },
                 { $push: { childrenId: comment._id } }
             );
         }
+
+        await notificationService.notifyUsers(
+            actor,
+            [loaded.task.createdBy, ...(loaded.task.assignedTo ?? [])],
+            {
+                entity: String(Entity.Task),
+                message: `${actor.name} commented on "${loaded.task.title}"`,
+                targetId: loaded.task._id as Types.ObjectId,
+                priority: String(Priority.Medium),
+            }
+        );
 
         return { ok: true as const, comment };
     } catch (error) {

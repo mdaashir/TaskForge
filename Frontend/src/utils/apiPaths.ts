@@ -5,6 +5,7 @@ const TASKS = '/tasks';
 const REPORTS = '/reports';
 const FILES = '/files';
 const COMMENTS = '/comments';
+const NOTIFICATIONS = '/notifications';
 
 export const API_PATHS = {
     auth: {
@@ -41,5 +42,11 @@ export const API_PATHS = {
     comments: {
         forTask: (taskId: string) => `${COMMENTS}/tasks/${taskId}`,
         byId: (id: string) => `${COMMENTS}/${id}`,
+    },
+    notifications: {
+        list: NOTIFICATIONS,
+        unreadCount: `${NOTIFICATIONS}/unread-count`,
+        seen: (id: string) => `${NOTIFICATIONS}/${id}/seen`,
+        seenAll: `${NOTIFICATIONS}/seen-all`,
     },
 } as const;
