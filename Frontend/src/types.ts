@@ -152,6 +152,18 @@ export interface DashboardResponse {
     recentTasks: Task[];
 }
 
+export interface FileAttachment {
+    _id: string;
+    name: string;
+    originalName: string;
+    size: number;
+    type: string;
+    uploadedBy?: UserOption | string;
+    taskId?: string;
+    projectId?: string;
+    createdAt?: string;
+}
+
 export interface PrivateRouteProps {
     allowedRoles: MemberType[];
 }

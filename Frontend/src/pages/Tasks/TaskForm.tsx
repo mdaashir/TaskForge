@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
+import Attachments from '../../components/Attachments.tsx';
 import { useAuth } from '../../context/useAuth.ts';
 import type {
     Project,
@@ -339,6 +340,14 @@ const TaskForm = () => {
                         )}
                     </div>
                 </div>
+
+                {editing && id ? (
+                    <Attachments kind="tasks" targetId={id} />
+                ) : (
+                    <p className="text-xs text-slate-400">
+                        Save the task first to add attachments.
+                    </p>
+                )}
 
                 <div className="flex items-center gap-3">
                     <button

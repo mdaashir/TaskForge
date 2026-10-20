@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
+import Attachments from '../../components/Attachments.tsx';
 import { useAuth } from '../../context/useAuth.ts';
 import type {
     Project,
@@ -334,6 +335,14 @@ const ManageProjects = () => {
                         )}
                     </div>
                 </div>
+
+                {editingId ? (
+                    <Attachments kind="projects" targetId={editingId} />
+                ) : (
+                    <p className="text-xs text-slate-400">
+                        Save the project first to add attachments.
+                    </p>
+                )}
 
                 <div className="flex items-center gap-3">
                     <button

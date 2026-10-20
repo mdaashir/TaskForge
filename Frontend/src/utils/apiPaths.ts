@@ -3,6 +3,7 @@ const USERS = '/users';
 const PROJECTS = '/projects';
 const TASKS = '/tasks';
 const REPORTS = '/reports';
+const FILES = '/files';
 
 export const API_PATHS = {
     auth: {
@@ -31,5 +32,9 @@ export const API_PATHS = {
     reports: {
         tasks: `${REPORTS}/tasks`,
         projects: `${REPORTS}/projects`,
+    },
+    files: {
+        byTarget: (kind: 'tasks' | 'projects', id: string) => `${FILES}/${kind}/${id}`,
+        byId: (id: string) => `${FILES}/${id}`,
     },
 } as const;
