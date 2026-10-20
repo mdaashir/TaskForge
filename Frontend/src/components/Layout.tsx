@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth.ts';
+import NotificationBell from './NotificationBell.tsx';
 import PageFallback from './PageFallback.tsx';
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -44,6 +45,7 @@ const AppLayout = () => {
                         ))}
                     </nav>
                     <span className="text-sm text-slate-500">{user?.name}</span>
+                    <NotificationBell />
                     <button
                         type="button"
                         onClick={handleLogout}
