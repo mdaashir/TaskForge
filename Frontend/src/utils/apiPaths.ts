@@ -4,6 +4,7 @@ const PROJECTS = '/projects';
 const TASKS = '/tasks';
 const REPORTS = '/reports';
 const FILES = '/files';
+const COMMENTS = '/comments';
 
 export const API_PATHS = {
     auth: {
@@ -36,5 +37,9 @@ export const API_PATHS = {
     files: {
         byTarget: (kind: 'tasks' | 'projects', id: string) => `${FILES}/${kind}/${id}`,
         byId: (id: string) => `${FILES}/${id}`,
+    },
+    comments: {
+        forTask: (taskId: string) => `${COMMENTS}/tasks/${taskId}`,
+        byId: (id: string) => `${COMMENTS}/${id}`,
     },
 } as const;
