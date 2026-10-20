@@ -5,6 +5,7 @@ import type { Project, ProjectListResponse, Task, TaskListResponse } from '../..
 import { API_PATHS } from '../../utils/apiPaths.ts';
 import axiosInstance from '../../utils/axiosInstance.ts';
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '../../utils/data.ts';
+import { downloadFile } from '../../utils/download.ts';
 import { getErrorMessage, labelOf, refName } from '../../utils/helper.ts';
 
 const LIMIT = 10;
@@ -27,6 +28,7 @@ const ManageTasks = () => {
     const [projectId, setProjectId] = useState('');
     const [status, setStatus] = useState('');
     const [loading, setLoading] = useState(false);
+    const [exporting, setExporting] = useState(false);
 
     const fetchTasks = useCallback(async () => {
         setLoading(true);
@@ -79,18 +81,47 @@ const ManageTasks = () => {
         }
     };
 
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            await downloadFile(
+                API_PATHS.reports.tasks,
+                {
+                    search: search || undefined,
+                    projectId: projectId || undefined,
+                    status: status || undefined,
+                },
+                'tasks.xlsx'
+            );
+        } catch (error) {
+            toast.error(getErrorMessage(error));
+        } finally {
+            setExporting(false);
+        }
+    };
+
     const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
     return (
         <div className="mx-auto max-w-6xl p-6">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold text-slate-800">Tasks</h1>
-                <Link
-                    to="/admin/tasks/create"
-                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
-                >
-                    New task
-                </Link>
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={handleExport}
+                        disabled={exporting}
+                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 disabled:opacity-60"
+                    >
+                        {exporting ? 'Exporting…' : 'Export'}
+                    </button>
+                    <Link
+                        to="/admin/tasks/create"
+                        className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white"
+                    >
+                        New task
+                    </Link>
+                </div>
             </div>
 
             <div className="mb-4 flex flex-wrap items-center gap-3">

@@ -21,36 +21,38 @@ const withPeople = () =>
         .populate('assignedTo', TASK_PEOPLE)
         .sort({ createdAt: -1 });
 
+interface TaskQuery {
+    search?: string;
+    projectId?: string;
+    status?: string;
+    assignedTo?: string;
+}
+
+async function buildFilter(actor: IUser, options: TaskQuery = {}): Promise<FilterQuery<ITask>> {
+    const conditions: FilterQuery<ITask>[] = [{ archived: { $ne: true } }];
+    if (!isAdmin(actor)) {
+        conditions.push({ projectId: { $in: await projectService.visibleIds(actor) } });
+    }
+    if (options.projectId) conditions.push({ projectId: options.projectId });
+    if (options.status) conditions.push({ status: options.status });
+    if (options.assignedTo) conditions.push({ assignedTo: options.assignedTo });
+    if (options.search) {
+        const escaped = options.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pattern = new RegExp(escaped, 'i');
+        conditions.push({ $or: [{ title: pattern }, { description: pattern }] });
+    }
+
+    return conditions.length === 1 ? conditions[0] : { $and: conditions };
+}
+
 async function getAll(
     actor: IUser,
-    options: {
-        page?: number;
-        limit?: number;
-        search?: string;
-        projectId?: string;
-        status?: string;
-        assignedTo?: string;
-    } = {}
+    options: TaskQuery & { page?: number; limit?: number } = {}
 ) {
     try {
         const page = Math.max(1, options.page ?? 1);
         const limit = Math.min(100, Math.max(1, options.limit ?? 20));
-
-        const conditions: FilterQuery<ITask>[] = [{ archived: { $ne: true } }];
-        if (!isAdmin(actor)) {
-            conditions.push({ projectId: { $in: await projectService.visibleIds(actor) } });
-        }
-        if (options.projectId) conditions.push({ projectId: options.projectId });
-        if (options.status) conditions.push({ status: options.status });
-        if (options.assignedTo) conditions.push({ assignedTo: options.assignedTo });
-        if (options.search) {
-            const escaped = options.search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const pattern = new RegExp(escaped, 'i');
-            conditions.push({ $or: [{ title: pattern }, { description: pattern }] });
-        }
-
-        const filter: FilterQuery<ITask> =
-            conditions.length === 1 ? conditions[0] : { $and: conditions };
+        const filter = await buildFilter(actor, options);
 
         const [tasks, total] = await Promise.all([
             withPeople().where(filter).skip((page - 1) * limit).limit(limit),
@@ -180,4 +182,4 @@ async function remove(taskId: Types.ObjectId, actor: IUser) {
     }
 }
 
-export default { getAll, getMine, getOne, create, update, remove };
+export default { getAll, buildFilter, getMine, getOne, create, update, remove };

@@ -12,6 +12,7 @@ import type {
 import { API_PATHS } from '../../utils/apiPaths.ts';
 import axiosInstance from '../../utils/axiosInstance.ts';
 import { PRIORITY_OPTIONS, STATUS_OPTIONS } from '../../utils/data.ts';
+import { downloadFile } from '../../utils/download.ts';
 import { getErrorMessage } from '../../utils/helper.ts';
 
 const LIMIT = 10;
@@ -65,6 +66,7 @@ const ManageProjects = () => {
     const [search, setSearch] = useState('');
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [exporting, setExporting] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState<FormState>(emptyForm);
 
@@ -175,22 +177,47 @@ const ManageProjects = () => {
         }
     };
 
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            await downloadFile(
+                API_PATHS.reports.projects,
+                { search: search || undefined },
+                'projects.xlsx'
+            );
+        } catch (error) {
+            toast.error(getErrorMessage(error));
+        } finally {
+            setExporting(false);
+        }
+    };
+
     const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
     return (
         <div className="mx-auto max-w-5xl p-6">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold text-slate-800">Projects</h1>
-                <input
-                    type="search"
-                    value={search}
-                    onChange={(event) => {
-                        setPage(1);
-                        setSearch(event.target.value);
-                    }}
-                    placeholder="Search projects"
-                    className="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary"
-                />
+                <div className="flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={handleExport}
+                        disabled={exporting}
+                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 disabled:opacity-60"
+                    >
+                        {exporting ? 'Exporting…' : 'Export'}
+                    </button>
+                    <input
+                        type="search"
+                        value={search}
+                        onChange={(event) => {
+                            setPage(1);
+                            setSearch(event.target.value);
+                        }}
+                        placeholder="Search projects"
+                        className="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                </div>
             </div>
 
             <form onSubmit={handleSubmit} className="mb-8 space-y-4 rounded-xl bg-white p-6 shadow-sm">
