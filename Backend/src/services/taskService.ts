@@ -1,8 +1,10 @@
 import { Types, type FilterQuery } from 'mongoose';
+import { Entity, Priority, Status } from '../enums/enums.ts';
 import projectModel from '../models/Project.ts';
 import taskModel from '../models/Task.ts';
 import type { ITask, IUser } from '../types.ts';
 import { canViewProject, idOf, isAdmin } from '../utils/access.ts';
+import notificationService from './notificationService.ts';
 import projectService from './projectService.ts';
 
 const TASK_PEOPLE = 'name email';
@@ -128,6 +130,14 @@ async function create(data: Partial<ITask>, actor: IUser) {
         const result = await task.save();
 
         await projectModel.updateOne({ _id: project._id }, { $push: { tasks: result._id } });
+
+        await notificationService.notifyUsers(actor, result.assignedTo ?? [], {
+            entity: String(Entity.Task),
+            message: `${actor.name} assigned you to "${result.title}"`,
+            targetId: result._id as Types.ObjectId,
+            priority: String(Priority.Medium),
+        });
+
         return { task: result };
     } catch (error) {
         return error instanceof Error
@@ -151,10 +161,27 @@ async function update(taskId: Types.ObjectId, data: Partial<ITask>, actor: IUser
             }));
         }
 
+        const previousStatus = task.status;
         Object.assign(task, patch);
         task.updatedBy = actor._id as Types.ObjectId;
         await task.validate();
         const result = await task.save();
+
+        if (result.status !== previousStatus) {
+            await notificationService.notifyUsers(
+                actor,
+                [result.createdBy, ...(result.assignedTo ?? [])],
+                {
+                    entity: String(Entity.Task),
+                    message: `${actor.name} changed "${result.title}" to ${
+                        Status.descriptions[result.status] ?? result.status
+                    }`,
+                    targetId: result._id as Types.ObjectId,
+                    status: result.status,
+                }
+            );
+        }
+
         return { task: result };
     } catch (error) {
         return error instanceof Error
