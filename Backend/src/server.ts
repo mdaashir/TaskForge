@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import connectDB from './config/db.ts';
 import authRoutes from './routes/authRoutes.ts';
 import dashboardRoutes from './routes/dashboardRoutes.ts';
+import fileRoutes from './routes/fileRoutes.ts';
 import projectRoutes from './routes/projectRoutes.ts';
 import reportRoutes from './routes/reportRoutes.ts';
 import taskRoutes from './routes/taskRoutes.ts';
@@ -66,6 +67,7 @@ app.use(`${PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${PREFIX}/users`, userRoutes);
 app.use(`${PREFIX}/projects`, projectRoutes);
 app.use(`${PREFIX}/tasks`, taskRoutes);
+app.use(`${PREFIX}/files`, fileRoutes);
 app.use(`${PREFIX}/reports`, reportRoutes);
 
 // Start Server
