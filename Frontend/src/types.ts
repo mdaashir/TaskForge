@@ -164,6 +164,16 @@ export interface FileAttachment {
     createdAt?: string;
 }
 
+export interface TaskComment {
+    _id: string;
+    text: string;
+    createdBy?: UserOption | string;
+    parentId?: string;
+    replies: TaskComment[];
+    createdAt?: string;
+    updatedAt?: string;
+}
+
 export interface PrivateRouteProps {
     allowedRoles: MemberType[];
 }
