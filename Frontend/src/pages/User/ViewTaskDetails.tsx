@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import { Link, useParams } from 'react-router-dom';
 import Attachments from '../../components/Attachments.tsx';
+import TaskComments from '../../components/TaskComments.tsx';
 import { useAuth } from '../../context/useAuth.ts';
 import type { Task } from '../../types.ts';
 import { API_PATHS } from '../../utils/apiPaths.ts';
@@ -97,6 +98,8 @@ const ViewTaskDetails = () => {
                 </div>
 
                 <Attachments kind="tasks" targetId={task._id} />
+
+                <TaskComments taskId={task._id} />
 
                 {!canEdit && (
                     <p className="text-xs text-slate-400">

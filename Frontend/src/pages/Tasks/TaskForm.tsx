@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import toast from 'react-hot-toast';
 import { useNavigate, useParams } from 'react-router-dom';
 import Attachments from '../../components/Attachments.tsx';
+import TaskComments from '../../components/TaskComments.tsx';
 import { useAuth } from '../../context/useAuth.ts';
 import type {
     Project,
@@ -342,10 +343,13 @@ const TaskForm = () => {
                 </div>
 
                 {editing && id ? (
-                    <Attachments kind="tasks" targetId={id} />
+                    <>
+                        <Attachments kind="tasks" targetId={id} />
+                        <TaskComments taskId={id} />
+                    </>
                 ) : (
                     <p className="text-xs text-slate-400">
-                        Save the task first to add attachments.
+                        Save the task first to add attachments and comments.
                     </p>
                 )}
 
