@@ -15,6 +15,7 @@ const AuditLogPage = lazy(() => import('./pages/Admin/AuditLog.tsx'));
 const ManageTasks = lazy(() => import('./pages/Admin/ManageTasks.tsx'));
 const ManageUsers = lazy(() => import('./pages/Admin/ManageUsers.tsx'));
 const ManageProjects = lazy(() => import('./pages/Projects/ManageProjects.tsx'));
+const ManageWorkflows = lazy(() => import('./pages/Workflows/ManageWorkflows.tsx'));
 const TaskForm = lazy(() => import('./pages/Tasks/TaskForm.tsx'));
 const MyTasks = lazy(() => import('./pages/User/MyTasks.tsx'));
 const UserDashboard = lazy(() => import('./pages/User/UserDashboard.tsx'));
@@ -42,6 +43,7 @@ const App = () => {
                             <Route element={<AppLayout />}>
                                 <Route path="/" element={<HomeRedirect />} />
                                 <Route path="/projects" element={<ManageProjects />} />
+                                <Route path="/workflows" element={<ManageWorkflows />} />
                                 <Route path="/tasks/edit/:id" element={<TaskForm />} />
 
                                 {/* Admin only */}
