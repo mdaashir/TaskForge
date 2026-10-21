@@ -20,6 +20,7 @@ const AppLayout = () => {
                   { to: '/projects', label: 'Projects' },
                   { to: '/admin/tasks', label: 'Tasks' },
                   { to: '/admin/users', label: 'Users' },
+                  { to: '/admin/audit', label: 'Audit' },
               ]
             : [
                   { to: '/user/dashboard', label: 'Dashboard' },
