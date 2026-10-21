@@ -6,6 +6,7 @@ const REPORTS = '/reports';
 const FILES = '/files';
 const COMMENTS = '/comments';
 const NOTIFICATIONS = '/notifications';
+const AUDIT = '/audit';
 
 export const API_PATHS = {
     auth: {
@@ -48,5 +49,8 @@ export const API_PATHS = {
         unreadCount: `${NOTIFICATIONS}/unread-count`,
         seen: (id: string) => `${NOTIFICATIONS}/${id}/seen`,
         seenAll: `${NOTIFICATIONS}/seen-all`,
+    },
+    audit: {
+        list: AUDIT,
     },
 } as const;

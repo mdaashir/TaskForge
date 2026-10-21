@@ -11,6 +11,7 @@ import { homeForRole } from './utils/helper.ts';
 const Login = lazy(() => import('./pages/Auth/Login.tsx'));
 const SignUp = lazy(() => import('./pages/Auth/SignUp.tsx'));
 const Dashboard = lazy(() => import('./pages/Admin/Dashboard.tsx'));
+const AuditLogPage = lazy(() => import('./pages/Admin/AuditLog.tsx'));
 const ManageTasks = lazy(() => import('./pages/Admin/ManageTasks.tsx'));
 const ManageUsers = lazy(() => import('./pages/Admin/ManageUsers.tsx'));
 const ManageProjects = lazy(() => import('./pages/Projects/ManageProjects.tsx'));
@@ -49,6 +50,7 @@ const App = () => {
                                     <Route path="/admin/tasks" element={<ManageTasks />} />
                                     <Route path="/admin/tasks/create" element={<TaskForm />} />
                                     <Route path="/admin/users" element={<ManageUsers />} />
+                                    <Route path="/admin/audit" element={<AuditLogPage />} />
                                 </Route>
 
                                 {/* User only */}

@@ -1,9 +1,10 @@
 import { Types, type FilterQuery } from 'mongoose';
-import { Entity, Priority, Status } from '../enums/enums.ts';
+import { Actions, Entity, Priority, Status } from '../enums/enums.ts';
 import projectModel from '../models/Project.ts';
 import taskModel from '../models/Task.ts';
 import type { ITask, IUser } from '../types.ts';
 import { canViewProject, idOf, isAdmin } from '../utils/access.ts';
+import auditService from './auditService.ts';
 import notificationService from './notificationService.ts';
 import projectService from './projectService.ts';
 
@@ -138,6 +139,14 @@ async function create(data: Partial<ITask>, actor: IUser) {
             priority: String(Priority.Medium),
         });
 
+        await auditService.record({
+            actor,
+            action: String(Actions.Create),
+            entity: String(Entity.Task),
+            targetId: result._id as Types.ObjectId,
+            newData: result,
+        });
+
         return { task: result };
     } catch (error) {
         return error instanceof Error
@@ -161,6 +170,7 @@ async function update(taskId: Types.ObjectId, data: Partial<ITask>, actor: IUser
             }));
         }
 
+        const before = task.toObject();
         const previousStatus = task.status;
         Object.assign(task, patch);
         task.updatedBy = actor._id as Types.ObjectId;
@@ -182,6 +192,18 @@ async function update(taskId: Types.ObjectId, data: Partial<ITask>, actor: IUser
             );
         }
 
+        const { oldData, newData } = auditService.diff(before, result);
+        if (oldData || newData) {
+            await auditService.record({
+                actor,
+                action: String(Actions.Update),
+                entity: String(Entity.Task),
+                targetId: result._id as Types.ObjectId,
+                oldData,
+                newData,
+            });
+        }
+
         return { task: result };
     } catch (error) {
         return error instanceof Error
@@ -199,8 +221,18 @@ async function remove(taskId: Types.ObjectId, actor: IUser) {
 
         const projectId = task.projectId;
         const taskDocId = task._id;
+        const before = task.toObject();
         await task.deleteOne();
         await projectModel.updateOne({ _id: projectId }, { $pull: { tasks: taskDocId } });
+
+        await auditService.record({
+            actor,
+            action: String(Actions.Delete),
+            entity: String(Entity.Task),
+            targetId: taskDocId as Types.ObjectId,
+            oldData: before,
+        });
+
         return { success: true as const };
     } catch (error) {
         return error instanceof Error

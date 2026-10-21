@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import { Types } from 'mongoose';
 import userService from '../services/userService.ts';
+import type { RequestWithUser } from '../types.ts';
 
 async function listUsers(req: Request, res: Response) {
     try {
@@ -39,9 +40,11 @@ async function getUserById(req: Request, res: Response) {
     }
 }
 
-async function createUser(req: Request, res: Response) {
+async function createUser(req: RequestWithUser, res: Response) {
     try {
-        const result = await userService.createUser(req.body.user);
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+
+        const result = await userService.createUser(req.body.user, req.user);
         if ('message' in result)
             return res.status('error' in result ? 500 : 400).json({ message: result.message });
 
@@ -54,14 +57,16 @@ async function createUser(req: Request, res: Response) {
     }
 }
 
-async function updateUser(req: Request, res: Response) {
+async function updateUser(req: RequestWithUser, res: Response) {
     try {
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
         if (!Types.ObjectId.isValid(req.params.id))
             return res.status(400).json({ message: 'Invalid user id' });
 
         const result = await userService.updateUser(
             new Types.ObjectId(req.params.id),
-            req.body.user
+            req.body.user,
+            req.user
         );
         if ('message' in result)
             return res.status('error' in result ? 500 : 400).json({ message: result.message });
@@ -75,12 +80,16 @@ async function updateUser(req: Request, res: Response) {
     }
 }
 
-async function deleteUser(req: Request, res: Response) {
+async function deleteUser(req: RequestWithUser, res: Response) {
     try {
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
         if (!Types.ObjectId.isValid(req.params.id))
             return res.status(400).json({ message: 'Invalid user id' });
 
-        const result = await userService.deleteUser(new Types.ObjectId(req.params.id));
+        const result = await userService.deleteUser(
+            new Types.ObjectId(req.params.id),
+            req.user
+        );
         if ('message' in result)
             return res.status('error' in result ? 500 : 404).json({ message: result.message });
 

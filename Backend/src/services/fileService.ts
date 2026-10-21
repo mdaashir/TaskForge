@@ -3,11 +3,13 @@ import type { Readable } from 'node:stream';
 import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import { Types } from 'mongoose';
 import { getStorage } from '../config/storage.ts';
+import { Actions, Entity } from '../enums/enums.ts';
 import fileModel from '../models/File.ts';
 import projectModel from '../models/Project.ts';
 import taskModel from '../models/Task.ts';
 import type { IFile, IProject, IUser } from '../types.ts';
 import { canViewProject, idOf, isAdmin } from '../utils/access.ts';
+import auditService from './auditService.ts';
 
 const accessDenied = () => ({ message: 'Access denied.', forbidden: true as const });
 const notFound = (label: string) => ({ message: `${label} not found.` });
@@ -61,6 +63,14 @@ async function saveFile(
             { $push: { attachments: doc._id } }
         );
     }
+
+    await auditService.record({
+        actor,
+        action: String(Actions.Create),
+        entity: String(Entity.File),
+        targetId: doc._id as Types.ObjectId,
+        newData: doc,
+    });
 
     return doc;
 }
@@ -187,12 +197,21 @@ async function remove(fileId: string, actor: IUser) {
         const docId = file._id;
         const taskId = file.taskId;
         const projectId = file.projectId;
+        const before = file.toObject();
         await file.deleteOne();
 
         if (taskId) await taskModel.updateOne({ _id: taskId }, { $pull: { attachments: docId } });
         else if (projectId) {
             await projectModel.updateOne({ _id: projectId }, { $pull: { attachments: docId } });
         }
+
+        await auditService.record({
+            actor,
+            action: String(Actions.Delete),
+            entity: String(Entity.File),
+            targetId: docId as Types.ObjectId,
+            oldData: before,
+        });
 
         return { success: true as const };
     } catch (error) {

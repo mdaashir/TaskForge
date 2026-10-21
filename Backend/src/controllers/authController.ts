@@ -121,7 +121,11 @@ async function updateUserProfile(req: RequestWithUser, res: Response) {
     try {
         if (!req.user) return res.status(401).json({ message: 'Not authorized' });
 
-        const result = await userService.updateUser(req.user._id as Types.ObjectId, req.body.user);
+        const result = await userService.updateUser(
+            req.user._id as Types.ObjectId,
+            req.body.user,
+            req.user
+        );
         if ('message' in result) return res.status(400).json({ message: result.message });
 
         return res.status(200).json({ message: 'Profile updated successfully.', user: result.user });
