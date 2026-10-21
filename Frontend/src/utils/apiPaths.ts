@@ -7,6 +7,7 @@ const FILES = '/files';
 const COMMENTS = '/comments';
 const NOTIFICATIONS = '/notifications';
 const AUDIT = '/audit';
+const WORKFLOWS = '/workflows';
 
 export const API_PATHS = {
     auth: {
@@ -52,5 +53,9 @@ export const API_PATHS = {
     },
     audit: {
         list: AUDIT,
+    },
+    workflows: {
+        list: WORKFLOWS,
+        byId: (id: string) => `${WORKFLOWS}/${id}`,
     },
 } as const;

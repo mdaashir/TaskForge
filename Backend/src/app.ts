@@ -14,6 +14,7 @@ import projectRoutes from './routes/projectRoutes.ts';
 import reportRoutes from './routes/reportRoutes.ts';
 import taskRoutes from './routes/taskRoutes.ts';
 import userRoutes from './routes/userRoutes.ts';
+import workflowRoutes from './routes/workflowRoutes.ts';
 
 dotenv.config();
 
@@ -70,6 +71,7 @@ app.use(`${PREFIX}/dashboard`, dashboardRoutes);
 app.use(`${PREFIX}/users`, userRoutes);
 app.use(`${PREFIX}/projects`, projectRoutes);
 app.use(`${PREFIX}/tasks`, taskRoutes);
+app.use(`${PREFIX}/workflows`, workflowRoutes);
 app.use(`${PREFIX}/comments`, commentRoutes);
 app.use(`${PREFIX}/files`, fileRoutes);
 app.use(`${PREFIX}/notifications`, notificationRoutes);

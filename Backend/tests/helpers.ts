@@ -71,11 +71,16 @@ export async function promote(email: string) {
 
 export const auth = (token: string) => ({ Authorization: `Bearer ${token}` });
 
-export async function createProject(token: string, members: string[] = [], name = 'Test Project') {
+export async function createProject(
+    token: string,
+    members: string[] = [],
+    name = 'Test Project',
+    extra: Record<string, unknown> = {}
+) {
     const response = await api()
         .post('/api/projects')
         .set(auth(token))
-        .send({ project: { name, members } });
+        .send({ project: { name, members, ...extra } });
 
     if (response.status !== 201) {
         throw new Error(`project create failed (${response.status}): ${JSON.stringify(response.body)}`);

@@ -18,6 +18,7 @@ const AppLayout = () => {
             ? [
                   { to: '/admin/dashboard', label: 'Dashboard' },
                   { to: '/projects', label: 'Projects' },
+                  { to: '/workflows', label: 'Workflows' },
                   { to: '/admin/tasks', label: 'Tasks' },
                   { to: '/admin/users', label: 'Users' },
                   { to: '/admin/audit', label: 'Audit' },
@@ -25,6 +26,7 @@ const AppLayout = () => {
             : [
                   { to: '/user/dashboard', label: 'Dashboard' },
                   { to: '/projects', label: 'Projects' },
+                  { to: '/workflows', label: 'Workflows' },
                   { to: '/user/tasks', label: 'My Tasks' },
               ];
 

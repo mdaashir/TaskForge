@@ -204,6 +204,44 @@ export interface AuditListResponse {
     limit: number;
 }
 
+export interface WorkflowRef {
+    _id: string;
+    name: string;
+    status?: ProjectStatus;
+    progress?: number;
+}
+
+export interface Workflow {
+    _id: string;
+    name: string;
+    description?: string;
+    parentId?: WorkflowRef | string | null;
+    owner: UserOption | string;
+    members?: (UserOption | string)[];
+    project?: (WorkflowRef | string)[];
+    progress: number;
+    status: ProjectStatus;
+    children?: WorkflowRef[];
+    createdAt?: string;
+}
+
+export interface WorkflowListResponse {
+    workflows: Workflow[];
+    total: number;
+    page: number;
+    limit: number;
+}
+
+export interface WorkflowInput {
+    name?: string;
+    description?: string;
+    parentId?: string | null;
+    owner?: string;
+    members?: string[];
+    project?: string[];
+    status?: ProjectStatus;
+}
+
 export interface PrivateRouteProps {
     allowedRoles: MemberType[];
 }
