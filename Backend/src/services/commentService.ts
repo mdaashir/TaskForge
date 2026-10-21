@@ -1,10 +1,11 @@
 import { Types, type HydratedDocument } from 'mongoose';
-import { Entity, Priority } from '../enums/enums.ts';
+import { Actions, Entity, Priority } from '../enums/enums.ts';
 import commentModel from '../models/Comment.ts';
 import projectModel from '../models/Project.ts';
 import taskModel from '../models/Task.ts';
 import type { IComment, IProject, ITask, IUser } from '../types.ts';
 import { canViewProject, idOf, isAdmin } from '../utils/access.ts';
+import auditService from './auditService.ts';
 import notificationService from './notificationService.ts';
 
 type CommentView = Record<string, unknown> & { replies: CommentView[] };
@@ -116,6 +117,14 @@ async function create(taskId: string, data: { text: string; parentId?: string },
             }
         );
 
+        await auditService.record({
+            actor,
+            action: String(Actions.Create),
+            entity: String(Entity.Comment),
+            targetId: comment._id as Types.ObjectId,
+            newData: comment,
+        });
+
         return { ok: true as const, comment };
     } catch (error) {
         return failed(error, 'Invalid comment data');
@@ -135,9 +144,23 @@ async function update(commentId: string, text: string, actor: IUser) {
         const loaded = await canModify(commentId, actor);
         if (!loaded.ok) return loaded;
 
+        const before = loaded.comment.toObject();
         loaded.comment.text = text;
         loaded.comment.updatedBy = actor._id as Types.ObjectId;
         await loaded.comment.save();
+
+        const { oldData, newData } = auditService.diff(before, loaded.comment);
+        if (oldData || newData) {
+            await auditService.record({
+                actor,
+                action: String(Actions.Update),
+                entity: String(Entity.Comment),
+                targetId: loaded.comment._id as Types.ObjectId,
+                oldData,
+                newData,
+            });
+        }
+
         return { ok: true as const, comment: loaded.comment };
     } catch (error) {
         return failed(error, 'Invalid comment data');
@@ -151,6 +174,7 @@ async function remove(commentId: string, actor: IUser) {
 
         const comment: IComment = loaded.comment;
         const ids = [comment._id as Types.ObjectId, ...(comment.childrenId ?? [])];
+        const before = comment.toObject();
 
         await commentModel.deleteMany({ _id: { $in: ids } });
         await taskModel.updateOne(
@@ -163,6 +187,14 @@ async function remove(commentId: string, actor: IUser) {
                 { $pull: { childrenId: comment._id } }
             );
         }
+
+        await auditService.record({
+            actor,
+            action: String(Actions.Delete),
+            entity: String(Entity.Comment),
+            targetId: comment._id as Types.ObjectId,
+            oldData: before,
+        });
 
         return { ok: true as const };
     } catch (error) {
