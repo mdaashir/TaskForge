@@ -10,7 +10,8 @@
         "typecheck": "tsc -p tsconfig.json --noEmit",
         "lint": "eslint src --ext .ts",
         "lint:fix": "eslint src --ext .ts --fix",
-        "test": "jest",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "format": "prettier --write ."
     },
     "dependencies": {
@@ -34,6 +35,7 @@
         "@types/express": "^5.0.3",
         "@types/jsonwebtoken": "^9.0.10",
         "@types/multer": "^2.0.0",
+        "@types/supertest": "^7.2.1",
         "@typescript-eslint/eslint-plugin": "^8.39.1",
         "@typescript-eslint/parser": "^8.39.1",
         "eslint": "^9.33.0",
@@ -42,8 +44,10 @@
         "eslint-plugin-prettier": "^5.5.4",
         "nodemon": "^3.1.10",
         "prettier": "^3.6.2",
+        "supertest": "^7.3.1",
         "typescript": "^5.9.2",
-        "typescript-eslint": "^8.39.1"
+        "typescript-eslint": "^8.39.1",
+        "vitest": "^5.0.5"
     },
     "author": "mdaashir",
     "license": "MIT"
