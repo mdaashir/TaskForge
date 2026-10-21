@@ -186,6 +186,24 @@ export interface AppNotification {
     createdAt?: string;
 }
 
+export interface AuditEntry {
+    _id: string;
+    action: string;
+    entity: string;
+    targetId: string;
+    userId?: UserOption | string;
+    oldData?: Record<string, unknown> | null;
+    newData?: Record<string, unknown> | null;
+    createdAt?: string;
+}
+
+export interface AuditListResponse {
+    entries: AuditEntry[];
+    total: number;
+    page: number;
+    limit: number;
+}
+
 export interface PrivateRouteProps {
     allowedRoles: MemberType[];
 }
