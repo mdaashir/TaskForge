@@ -1,4 +1,16 @@
 services:
+  mongo:
+    image: mongo:7
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   minio:
     image: minio/minio:latest
     command: server /data --console-address ":9001"
@@ -23,4 +35,5 @@ services:
       "
 
 volumes:
+  mongo-data:
   minio-data:
