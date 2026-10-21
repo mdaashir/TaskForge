@@ -47,10 +47,13 @@ export const relativeTime = (value?: string): string => {
 
     let amount = seconds;
     let label = 'second';
-    for (const [size, name] of units) {
+    for (let index = 0; index < units.length; index += 1) {
+        const [size, name] = units[index];
         amount = Math.floor(amount / size);
         label = name;
-        if (amount < size) break;
+
+        const nextSize = units[index + 1]?.[0];
+        if (nextSize === undefined || amount < nextSize) break;
     }
 
     return `${amount} ${label}${amount === 1 ? '' : 's'} ago`;
