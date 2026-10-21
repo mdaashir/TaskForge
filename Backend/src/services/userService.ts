@@ -1,8 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { Types, type FilterQuery } from 'mongoose';
+import { Actions, Entity } from '../enums/enums.ts';
 import userModel from '../models/User.ts';
 import type { IUser } from '../types.ts';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwtUtils.ts';
+import auditService from './auditService.ts';
 
 async function getAll(options: { page?: number; limit?: number; search?: string } = {}) {
     try {
@@ -53,13 +55,22 @@ async function getOne(userId: Types.ObjectId, fields: string[] = []) {
     }
 }
 
-async function createUser(data: IUser) {
+async function createUser(data: IUser, actor?: IUser) {
     try {
         const user = new userModel(data);
         await user.validate();
         const exists = await userModel.exists({ email: user.email });
         if (exists) return { message: 'User with this email already exists.' };
         const result = await user.save();
+        if (actor) {
+            await auditService.record({
+                actor,
+                action: String(Actions.Create),
+                entity: String(Entity.User),
+                targetId: result._id as Types.ObjectId,
+                newData: result,
+            });
+        }
         return {
             user: result,
             accessToken: generateAccessToken(result),
@@ -92,7 +103,7 @@ async function login(email: string, password: string) {
     }
 }
 
-async function updateUser(userId: Types.ObjectId, data: Partial<IUser>) {
+async function updateUser(userId: Types.ObjectId, data: Partial<IUser>, actor?: IUser) {
     try {
         if (!Types.ObjectId.isValid(userId)) return { message: 'Invalid user ID.' };
         const user = await userModel.findById(userId);
@@ -101,9 +112,23 @@ async function updateUser(userId: Types.ObjectId, data: Partial<IUser>) {
             const exists = await userModel.exists({ email: data.email });
             if (exists) return { message: 'Email already in use by another user.' };
         }
+        const before = user.toObject();
         Object.assign(user, data);
         await user.validate();
         const result = await user.save();
+        if (actor) {
+            const { oldData, newData } = auditService.diff(before, result);
+            if (oldData || newData) {
+                await auditService.record({
+                    actor,
+                    action: String(Actions.Update),
+                    entity: String(Entity.User),
+                    targetId: result._id as Types.ObjectId,
+                    oldData,
+                    newData,
+                });
+            }
+        }
         return { user: result };
     } catch (error) {
         return error instanceof Error
@@ -112,11 +137,20 @@ async function updateUser(userId: Types.ObjectId, data: Partial<IUser>) {
     }
 }
 
-async function deleteUser(userId: Types.ObjectId) {
+async function deleteUser(userId: Types.ObjectId, actor?: IUser) {
     try {
         if (!Types.ObjectId.isValid(userId)) return { message: 'Invalid user ID.' };
         const result = await userModel.findByIdAndDelete(userId);
         if (!result) return { message: 'User not found.' };
+        if (actor) {
+            await auditService.record({
+                actor,
+                action: String(Actions.Delete),
+                entity: String(Entity.User),
+                targetId: result._id as Types.ObjectId,
+                oldData: result,
+            });
+        }
         return { success: true as const };
     } catch (error) {
         return error instanceof Error

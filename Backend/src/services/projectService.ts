@@ -1,7 +1,9 @@
 import { Types, type FilterQuery } from 'mongoose';
+import { Actions, Entity } from '../enums/enums.ts';
 import projectModel from '../models/Project.ts';
 import type { IProject, IUser } from '../types.ts';
 import { canDeleteProject, canViewProject, isAdmin } from '../utils/access.ts';
+import auditService from './auditService.ts';
 
 const PEOPLE = 'name email memberType';
 
@@ -90,6 +92,13 @@ async function create(data: Partial<IProject>, actor: IUser) {
         const project = new projectModel(payload);
         await project.validate();
         const result = await project.save();
+        await auditService.record({
+            actor,
+            action: String(Actions.Create),
+            entity: String(Entity.Project),
+            targetId: result._id as Types.ObjectId,
+            newData: result,
+        });
         return { project: result };
     } catch (error) {
         return error instanceof Error
@@ -108,10 +117,24 @@ async function update(projectId: Types.ObjectId, data: Partial<IProject>, actor:
         const patch: Partial<IProject> = { ...data };
         if (!isAdmin(actor)) delete patch.owner;
 
+        const before = project.toObject();
         Object.assign(project, patch);
         project.updatedBy = actor._id as Types.ObjectId;
         await project.validate();
         const result = await project.save();
+
+        const { oldData, newData } = auditService.diff(before, result);
+        if (oldData || newData) {
+            await auditService.record({
+                actor,
+                action: String(Actions.Update),
+                entity: String(Entity.Project),
+                targetId: result._id as Types.ObjectId,
+                oldData,
+                newData,
+            });
+        }
+
         return { project: result };
     } catch (error) {
         return error instanceof Error
@@ -127,7 +150,15 @@ async function remove(projectId: Types.ObjectId, actor: IUser) {
         if (!project) return notFound();
         if (!canDeleteProject(project, actor)) return accessDenied();
 
+        const before = project.toObject();
         await project.deleteOne();
+        await auditService.record({
+            actor,
+            action: String(Actions.Delete),
+            entity: String(Entity.Project),
+            targetId: project._id as Types.ObjectId,
+            oldData: before,
+        });
         return { success: true as const };
     } catch (error) {
         return error instanceof Error
