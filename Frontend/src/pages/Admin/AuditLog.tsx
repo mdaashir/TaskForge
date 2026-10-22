@@ -6,12 +6,14 @@ import { getErrorMessage, refName, relativeTime } from '../../utils/helper.ts';
 
 const LIMIT = 20;
 
-const ENTITY_OPTIONS = ['User', 'Project', 'Task', 'Comment', 'File'];
+const ENTITY_OPTIONS = ['User', 'Project', 'Task', 'Comment', 'File', 'Workflow'];
 
 const ACTION_OPTIONS = [
     { value: 'CREATE', label: 'Create' },
     { value: 'UPDATE', label: 'Update' },
     { value: 'DELETE', label: 'Delete' },
+    { value: 'ARCHIVE', label: 'Archive' },
+    { value: 'RESTORE', label: 'Restore' },
 ];
 
 const selectClass =

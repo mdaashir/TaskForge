@@ -26,7 +26,6 @@ export const updateUserSchema = z.object({
             memberType: memberTypeSchema.optional(),
             roles: rolesSchema.optional(),
             state: stateSchema.optional(),
-            archived: z.boolean().optional(),
             tags: z.array(z.string().trim().min(1)).optional(),
         })
         .refine((value) => Object.keys(value).length > 0, {

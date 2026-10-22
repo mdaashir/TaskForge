@@ -65,6 +65,7 @@ const ManageProjects = () => {
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
+    const [showArchived, setShowArchived] = useState(false);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [exporting, setExporting] = useState(false);
@@ -76,7 +77,7 @@ const ManageProjects = () => {
         try {
             const { data } = await axiosInstance.get<ProjectListResponse>(
                 API_PATHS.projects.list,
-                { params: { page, limit: LIMIT, search: search || undefined } }
+                { params: { page, limit: LIMIT, search: search || undefined, archived: showArchived ? 'archived' : undefined } }
             );
             setProjects(data.projects);
             setTotal(data.total);
@@ -85,7 +86,7 @@ const ManageProjects = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, search]);
+    }, [page, search, showArchived]);
 
     useEffect(() => {
         void fetchProjects();
@@ -178,6 +179,21 @@ const ManageProjects = () => {
         }
     };
 
+    const handleArchiveToggle = async (project: Project) => {
+        try {
+            if (project.archived) {
+                await axiosInstance.put(API_PATHS.projects.restore(project._id));
+                toast.success('Project restored');
+            } else {
+                await axiosInstance.put(API_PATHS.projects.archive(project._id));
+                toast.success('Project archived');
+            }
+            await fetchProjects();
+        } catch (error) {
+            toast.error(getErrorMessage(error));
+        }
+    };
+
     const handleExport = async () => {
         setExporting(true);
         try {
@@ -200,6 +216,17 @@ const ManageProjects = () => {
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold text-slate-800">Projects</h1>
                 <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 text-sm text-slate-600">
+                        <input
+                            type="checkbox"
+                            checked={showArchived}
+                            onChange={(event) => {
+                                setPage(1);
+                                setShowArchived(event.target.checked);
+                            }}
+                        />
+                        Show archived
+                    </label>
                     <button
                         type="button"
                         onClick={handleExport}
@@ -393,7 +420,14 @@ const ManageProjects = () => {
                         ) : (
                             projects.map((project) => (
                                 <tr key={project._id} className="border-t border-slate-100">
-                                    <td className="px-4 py-3 text-slate-700">{project.name}</td>
+                                    <td className="px-4 py-3 text-slate-700">
+                                        {project.name}
+                                        {project.archived && (
+                                            <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                                                Archived
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-3 text-slate-500">
                                         {refName(project.owner)}
                                     </td>
@@ -414,6 +448,13 @@ const ManageProjects = () => {
                                             className="mr-3 font-medium text-primary"
                                         >
                                             Edit
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleArchiveToggle(project)}
+                                            className="mr-3 font-medium text-slate-600"
+                                        >
+                                            {project.archived ? 'Restore' : 'Archive'}
                                         </button>
                                         <button
                                             type="button"

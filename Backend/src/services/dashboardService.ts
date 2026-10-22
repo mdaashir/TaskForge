@@ -23,6 +23,8 @@ async function getDashboard(actor: IUser) {
         if (!admin) {
             projectFilter.$or = [{ owner: actor._id }, { members: actor._id }];
             taskFilter.projectId = { $in: await projectService.visibleIds(actor) };
+        } else {
+            taskFilter.projectId = { $nin: await projectService.archivedIds() };
         }
 
         const overdueFilter: FilterQuery<ITask> = {

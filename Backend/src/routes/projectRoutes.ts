@@ -14,6 +14,8 @@ router.get('/', project.listProjects);
 router.get('/:id', project.getProjectById);
 router.post('/', validateRequestBody(createProjectSchema), project.createProject);
 router.put('/:id', validateRequestBody(updateProjectSchema), project.updateProject);
+router.put('/:id/archive', project.archiveProject);
+router.put('/:id/restore', project.restoreProject);
 router.delete('/:id', project.deleteProject);
 
 export default router;

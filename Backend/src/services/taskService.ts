@@ -24,18 +24,36 @@ const withPeople = () =>
         .populate('assignedTo', TASK_PEOPLE)
         .sort({ createdAt: -1 });
 
+type ArchivedView = 'active' | 'archived' | 'all';
+
 interface TaskQuery {
     search?: string;
     projectId?: string;
     status?: string;
     assignedTo?: string;
+    archived?: ArchivedView;
 }
 
 async function buildFilter(actor: IUser, options: TaskQuery = {}): Promise<FilterQuery<ITask>> {
-    const conditions: FilterQuery<ITask>[] = [{ archived: { $ne: true } }];
+    const includeArchivedProjects =
+        options.archived === 'archived' || options.archived === 'all';
+    const conditions: FilterQuery<ITask>[] = [];
+
+    if (options.archived === 'archived') conditions.push({ archived: true });
+    else if (options.archived !== 'all') conditions.push({ archived: { $ne: true } });
+
     if (!isAdmin(actor)) {
-        conditions.push({ projectId: { $in: await projectService.visibleIds(actor) } });
+        conditions.push({
+            projectId: {
+                $in: await projectService.visibleIds(actor, {
+                    includeArchived: includeArchivedProjects,
+                }),
+            },
+        });
+    } else if (!includeArchivedProjects) {
+        conditions.push({ projectId: { $nin: await projectService.archivedIds() } });
     }
+
     if (options.projectId) conditions.push({ projectId: options.projectId });
     if (options.status) conditions.push({ status: options.status });
     if (options.assignedTo) conditions.push({ assignedTo: options.assignedTo });
@@ -45,6 +63,7 @@ async function buildFilter(actor: IUser, options: TaskQuery = {}): Promise<Filte
         conditions.push({ $or: [{ title: pattern }, { description: pattern }] });
     }
 
+    if (conditions.length === 0) return {};
     return conditions.length === 1 ? conditions[0] : { $and: conditions };
 }
 
@@ -70,11 +89,17 @@ async function getAll(
     }
 }
 
-async function getMine(actor: IUser, options: { page?: number; limit?: number } = {}) {
+async function getMine(
+    actor: IUser,
+    options: { page?: number; limit?: number; archived?: ArchivedView } = {}
+) {
     try {
         const page = Math.max(1, options.page ?? 1);
         const limit = Math.min(100, Math.max(1, options.limit ?? 20));
-        const filter: FilterQuery<ITask> = { archived: { $ne: true }, assignedTo: actor._id };
+        const filter = await buildFilter(actor, {
+            archived: options.archived,
+            assignedTo: String(actor._id),
+        });
 
         const [tasks, total] = await Promise.all([
             withPeople().where(filter).skip((page - 1) * limit).limit(limit),
@@ -241,4 +266,62 @@ async function remove(taskId: Types.ObjectId, actor: IUser) {
     }
 }
 
-export default { getAll, buildFilter, getMine, getOne, create, update, remove };
+async function setArchived(taskId: Types.ObjectId, actor: IUser, archived: boolean) {
+    try {
+        if (!Types.ObjectId.isValid(taskId)) return invalidId();
+        const task = await taskModel.findById(taskId);
+        if (!task) return notFound();
+        if (!canModify(task, actor)) return accessDenied();
+
+        if (Boolean(task.archived) === archived) return { task };
+
+        task.archived = archived;
+        if (archived) {
+            task.archivedAt = new Date();
+            task.archivedBy = actor._id as Types.ObjectId;
+        } else {
+            task.archivedAt = undefined;
+            task.archivedBy = undefined;
+        }
+        task.updatedBy = actor._id as Types.ObjectId;
+
+        const result = await task.save();
+
+        await auditService.record({
+            actor,
+            action: String(archived ? Actions.Archive : Actions.Restore),
+            entity: String(Entity.Task),
+            targetId: result._id as Types.ObjectId,
+            oldData: { archived: !archived },
+            newData: { archived },
+        });
+
+        return { task: result };
+    } catch (error) {
+        return error instanceof Error
+            ? {
+                  message: `Error ${archived ? 'archiving' : 'restoring'} task`,
+                  error: error.message,
+              }
+            : {
+                  message: `An unknown error occurred while ${
+                      archived ? 'archiving' : 'restoring'
+                  } the task.`,
+              };
+    }
+}
+
+const archive = (taskId: Types.ObjectId, actor: IUser) => setArchived(taskId, actor, true);
+const restore = (taskId: Types.ObjectId, actor: IUser) => setArchived(taskId, actor, false);
+
+export default {
+    getAll,
+    buildFilter,
+    getMine,
+    getOne,
+    create,
+    update,
+    archive,
+    restore,
+    remove,
+};
