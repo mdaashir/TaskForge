@@ -23,6 +23,8 @@ export const API_PATHS = {
         list: USERS,
         options: `${USERS}/options`,
         byId: (id: string) => `${USERS}/${id}`,
+        archive: (id: string) => `${USERS}/${id}/archive`,
+        restore: (id: string) => `${USERS}/${id}/restore`,
     },
     projects: {
         list: PROJECTS,

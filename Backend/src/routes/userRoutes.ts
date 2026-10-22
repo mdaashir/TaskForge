@@ -16,6 +16,8 @@ router.get('/', user.listUsers);
 router.get('/:id', user.getUserById);
 router.post('/', validateRequestBody(createUserSchema), user.createUser);
 router.put('/:id', validateRequestBody(updateUserSchema), user.updateUser);
+router.put('/:id/archive', user.archiveUser);
+router.put('/:id/restore', user.restoreUser);
 router.delete('/:id', user.deleteUser);
 
 export default router;

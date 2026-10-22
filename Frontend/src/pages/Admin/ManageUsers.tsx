@@ -37,6 +37,7 @@ const ManageUsers = () => {
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
+    const [showArchived, setShowArchived] = useState(false);
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,7 +47,12 @@ const ManageUsers = () => {
         setLoading(true);
         try {
             const { data } = await axiosInstance.get<UserListResponse>(API_PATHS.users.list, {
-                params: { page, limit: LIMIT, search: search || undefined },
+                params: {
+                    page,
+                    limit: LIMIT,
+                    search: search || undefined,
+                    archived: showArchived ? 'archived' : undefined,
+                },
             });
             setUsers(data.users);
             setTotal(data.total);
@@ -55,7 +61,7 @@ const ManageUsers = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, search]);
+    }, [page, search, showArchived]);
 
     useEffect(() => {
         void fetchUsers();
@@ -127,22 +133,50 @@ const ManageUsers = () => {
         }
     };
 
+    const handleArchiveToggle = async (user: User) => {
+        try {
+            if (user.archived) {
+                await axiosInstance.put(API_PATHS.users.restore(user._id));
+                toast.success('User restored');
+            } else {
+                await axiosInstance.put(API_PATHS.users.archive(user._id));
+                toast.success('User archived');
+            }
+            await fetchUsers();
+        } catch (error) {
+            toast.error(getErrorMessage(error));
+        }
+    };
+
     const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
     return (
         <div className="mx-auto max-w-5xl p-6">
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold text-slate-800">Manage users</h1>
-                <input
-                    type="search"
-                    value={search}
-                    onChange={(event) => {
-                        setPage(1);
-                        setSearch(event.target.value);
-                    }}
-                    placeholder="Search name or email"
-                    className="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary"
-                />
+                <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 text-sm text-slate-600">
+                        <input
+                            type="checkbox"
+                            checked={showArchived}
+                            onChange={(event) => {
+                                setPage(1);
+                                setShowArchived(event.target.checked);
+                            }}
+                        />
+                        Show archived
+                    </label>
+                    <input
+                        type="search"
+                        value={search}
+                        onChange={(event) => {
+                            setPage(1);
+                            setSearch(event.target.value);
+                        }}
+                        placeholder="Search name or email"
+                        className="w-64 rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                </div>
             </div>
 
             <form onSubmit={handleSubmit} className="mb-8 space-y-4 rounded-xl bg-white p-6 shadow-sm">
@@ -267,7 +301,14 @@ const ManageUsers = () => {
                         ) : (
                             users.map((user) => (
                                 <tr key={user._id} className="border-t border-slate-100">
-                                    <td className="px-4 py-3 text-slate-700">{user.name}</td>
+                                    <td className="px-4 py-3 text-slate-700">
+                                        {user.name}
+                                        {user.archived && (
+                                            <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                                                Archived
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-3 text-slate-500">{user.email}</td>
                                     <td className="px-4 py-3 text-slate-500">{user.memberType}</td>
                                     <td className="px-4 py-3 text-slate-500">
@@ -280,6 +321,13 @@ const ManageUsers = () => {
                                             className="mr-3 font-medium text-primary"
                                         >
                                             Edit
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleArchiveToggle(user)}
+                                            className="mr-3 font-medium text-slate-600"
+                                        >
+                                            {user.archived ? 'Restore' : 'Archive'}
                                         </button>
                                         <button
                                             type="button"

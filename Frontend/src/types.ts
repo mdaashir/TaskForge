@@ -17,6 +17,7 @@ export interface User {
     roles?: string[];
     state?: string;
     tags?: string[];
+    archived?: boolean;
 }
 
 export interface UserOption {

@@ -11,6 +11,8 @@ notifications, dashboards, Excel reports, an audit trail and nested workflows.
 - **Tasks** — per-project tasks with checklists, assignment, status and due dates.
 - **Archive & restore** — soft-delete projects and tasks; archived projects' tasks are hidden by
   association and return when the project is restored.
+- **User deactivation** — admins can archive an account; login, refresh and already-issued access
+  tokens stop working until it is restored, while its data and references stay intact.
 - **Workflows** — nested containers that link projects; progress rolls up from them.
 - **Comments** — one level of replies per task, with author/admin edit rules.
 - **Attachments** — files on tasks and projects, streamed through the API (never public URLs).
@@ -84,8 +86,9 @@ Three member types exist: `ADMIN`, `USER` and `VIEWER`.
 Workflow membership does **not** grant project access; a linked project's own rules still apply.
 
 Archive and restore use the same permission as delete in each area: projects by the owner or an
-admin, tasks by the creator or an admin. Archived records are hidden by default; list endpoints
-accept `archived=archived` or `archived=all`.
+admin, tasks by the creator or an admin, users by an admin (an admin cannot archive their own
+account). Archived records are hidden by default; list endpoints accept `archived=archived` or
+`archived=all`.
 
 ## Getting started
 
@@ -188,7 +191,7 @@ docker compose exec mongo mongosh taskforge --eval \
 | `npm start`          | Node 26 on `src/server.ts`                   |
 | `npm run build`      | Typecheck (`tsc --noEmit`)                   |
 | `npm run lint`       | ESLint over `src`                            |
-| `npm test`           | Vitest (56 tests, needs MongoDB)             |
+| `npm test`           | Vitest (63 tests, needs MongoDB)             |
 | `npm run test:watch` | Vitest in watch mode                         |
 
 ### Frontend
@@ -219,6 +222,8 @@ All routes are mounted under `PREFIX` (`/api` by default).
 | GET    | `/users`, `/users/:id`               | admin                    | List and read users                       |
 | POST   | `/users`                             | admin                    | Create a user                             |
 | PUT    | `/users/:id`                         | admin                    | Update a user                             |
+| PUT    | `/users/:id/archive`                 | admin                    | Deactivate a user                         |
+| PUT    | `/users/:id/restore`                 | admin                    | Reactivate a user                         |
 | DELETE | `/users/:id`                         | admin                    | Delete a user                             |
 | GET    | `/projects`, `/projects/:id`         | authenticated (filtered) | Visible projects                          |
 | POST   | `/projects`                          | authenticated            | Create a project                          |
@@ -283,6 +288,8 @@ frontend job runs lint, build and its suite.
 - Archiving is a soft delete: the record and its data stay in MongoDB, and the list endpoints hide
   it unless `archived=archived` or `archived=all` is passed. Archiving a project does not write
   anything to its tasks — they are hidden because their project is archived.
+- An archived user cannot log in or refresh, and an access token issued before the archive is
+  rejected on its next request: the auth middleware reloads the user from MongoDB every time.
 - There are no coverage thresholds and no app Dockerfiles yet; the compose file is for local
   dependencies only.
 - `File.commentId` exists in the schema, but comment attachments are not wired up in the API or UI.
