@@ -121,8 +121,10 @@ async function updateUser(userId: Types.ObjectId, data: Partial<IUser>, actor?: 
             const exists = await userModel.exists({ email: data.email });
             if (exists) return { message: 'Email already in use by another user.' };
         }
+        const passwordChanged = Boolean(data.password);
         const before = user.toObject();
         Object.assign(user, data);
+        if (passwordChanged) user.tokenVersion = (user.tokenVersion ?? 0) + 1;
         await user.validate();
         const result = await user.save();
         if (actor) {
@@ -231,6 +233,18 @@ async function setArchived(userId: Types.ObjectId, actor: IUser, archived: boole
     }
 }
 
+async function invalidateSessions(userId: Types.ObjectId) {
+    try {
+        const result = await userModel.updateOne({ _id: userId }, { $inc: { tokenVersion: 1 } });
+        if (result.matchedCount === 0) return { message: 'User not found.' };
+        return { success: true as const };
+    } catch (error) {
+        return error instanceof Error
+            ? { message: 'Error invalidating sessions', error: error.message }
+            : { message: 'An unknown error occurred while invalidating sessions.' };
+    }
+}
+
 const archive = (userId: Types.ObjectId, actor: IUser) => setArchived(userId, actor, true);
 const restore = (userId: Types.ObjectId, actor: IUser) => setArchived(userId, actor, false);
 
@@ -241,6 +255,7 @@ export default {
     createUser,
     login,
     updateUser,
+    invalidateSessions,
     archive,
     restore,
     deleteUser,
