@@ -11,20 +11,33 @@ const accessDenied = () => ({ message: 'Access denied.', forbidden: true as cons
 const notFound = () => ({ message: 'Project not found.' });
 const invalidId = () => ({ message: 'Invalid project ID.' });
 
-async function visibleIds(actor: IUser) {
-    const projects = await projectModel
-        .find({ $or: [{ owner: actor._id }, { members: actor._id }] })
-        .select('_id');
+type ArchivedView = 'active' | 'archived' | 'all';
+
+async function visibleIds(actor: IUser, options: { includeArchived?: boolean } = {}) {
+    const filter: FilterQuery<IProject> = { $or: [{ owner: actor._id }, { members: actor._id }] };
+    if (!options.includeArchived) filter.archived = { $ne: true };
+
+    const projects = await projectModel.find(filter).select('_id');
+    return projects.map((project) => project._id as Types.ObjectId);
+}
+
+async function archivedIds() {
+    const projects = await projectModel.find({ archived: true }).select('_id');
     return projects.map((project) => project._id as Types.ObjectId);
 }
 
 interface ProjectQuery {
     search?: string;
     status?: string;
+    archived?: ArchivedView;
 }
 
 function buildFilter(actor: IUser, options: ProjectQuery = {}): FilterQuery<IProject> {
-    const conditions: FilterQuery<IProject>[] = [{ archived: { $ne: true } }];
+    const conditions: FilterQuery<IProject>[] = [];
+
+    if (options.archived === 'archived') conditions.push({ archived: true });
+    else if (options.archived !== 'all') conditions.push({ archived: { $ne: true } });
+
     if (!isAdmin(actor)) {
         conditions.push({ $or: [{ owner: actor._id }, { members: actor._id }] });
     }
@@ -35,6 +48,7 @@ function buildFilter(actor: IUser, options: ProjectQuery = {}): FilterQuery<IPro
     }
     if (options.status) conditions.push({ status: options.status });
 
+    if (conditions.length === 0) return {};
     return conditions.length === 1 ? conditions[0] : { $and: conditions };
 }
 
@@ -167,4 +181,66 @@ async function remove(projectId: Types.ObjectId, actor: IUser) {
     }
 }
 
-export default { getAll, buildFilter, visibleIds, getOne, create, update, remove };
+async function setArchived(projectId: Types.ObjectId, actor: IUser, archived: boolean) {
+    try {
+        if (!Types.ObjectId.isValid(projectId)) return invalidId();
+        const project = await projectModel.findById(projectId);
+        if (!project) return notFound();
+        if (!canDeleteProject(project, actor)) return accessDenied();
+
+        if (Boolean(project.archived) === archived) return { project };
+
+        project.archived = archived;
+        if (archived) {
+            project.archivedAt = new Date();
+            project.archivedBy = actor._id as Types.ObjectId;
+        } else {
+            project.archivedAt = undefined;
+            project.archivedBy = undefined;
+        }
+        project.updatedBy = actor._id as Types.ObjectId;
+
+        const result = await project.save();
+
+        await auditService.record({
+            actor,
+            action: String(archived ? Actions.Archive : Actions.Restore),
+            entity: String(Entity.Project),
+            targetId: result._id as Types.ObjectId,
+            oldData: { archived: !archived },
+            newData: { archived },
+        });
+
+        return { project: result };
+    } catch (error) {
+        return error instanceof Error
+            ? {
+                  message: `Error ${archived ? 'archiving' : 'restoring'} project`,
+                  error: error.message,
+              }
+            : {
+                  message: `An unknown error occurred while ${
+                      archived ? 'archiving' : 'restoring'
+                  } the project.`,
+              };
+    }
+}
+
+const archive = (projectId: Types.ObjectId, actor: IUser) =>
+    setArchived(projectId, actor, true);
+
+const restore = (projectId: Types.ObjectId, actor: IUser) =>
+    setArchived(projectId, actor, false);
+
+export default {
+    getAll,
+    buildFilter,
+    visibleIds,
+    archivedIds,
+    getOne,
+    create,
+    update,
+    archive,
+    restore,
+    remove,
+};

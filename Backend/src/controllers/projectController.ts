@@ -8,6 +8,9 @@ const problemStatus = (result: object) =>
 
 const invalidId = (res: Response) => res.status(400).json({ message: 'Invalid project id' });
 
+const archivedView = (value: unknown): 'active' | 'archived' | 'all' | undefined =>
+    value === 'active' || value === 'archived' || value === 'all' ? value : undefined;
+
 async function listProjects(req: RequestWithUser, res: Response) {
     try {
         if (!req.user) return res.status(401).json({ message: 'Not authorized' });
@@ -17,7 +20,13 @@ async function listProjects(req: RequestWithUser, res: Response) {
         const search = typeof req.query.search === 'string' ? req.query.search : undefined;
         const status = typeof req.query.status === 'string' ? req.query.status : undefined;
 
-        const result = await projectService.getAll(req.user, { page, limit, search, status });
+        const result = await projectService.getAll(req.user, {
+            page,
+            limit,
+            search,
+            status,
+            archived: archivedView(req.query.archived),
+        });
         if ('message' in result) {
             const code = problemStatus(result);
             return res.status(code).json({ message: String(result.message) });
@@ -115,4 +124,60 @@ async function deleteProject(req: RequestWithUser, res: Response) {
     }
 }
 
-export default { listProjects, getProjectById, createProject, updateProject, deleteProject };
+async function archiveProject(req: RequestWithUser, res: Response) {
+    try {
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+        if (!Types.ObjectId.isValid(req.params.id)) return invalidId(res);
+
+        const result = await projectService.archive(
+            new Types.ObjectId(req.params.id),
+            req.user
+        );
+        if ('message' in result) {
+            return res.status(problemStatus(result)).json({ message: String(result.message) });
+        }
+
+        return res
+            .status(200)
+            .json({ message: 'Project archived successfully.', project: result.project });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error',
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
+async function restoreProject(req: RequestWithUser, res: Response) {
+    try {
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+        if (!Types.ObjectId.isValid(req.params.id)) return invalidId(res);
+
+        const result = await projectService.restore(
+            new Types.ObjectId(req.params.id),
+            req.user
+        );
+        if ('message' in result) {
+            return res.status(problemStatus(result)).json({ message: String(result.message) });
+        }
+
+        return res
+            .status(200)
+            .json({ message: 'Project restored successfully.', project: result.project });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error',
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
+export default {
+    listProjects,
+    getProjectById,
+    createProject,
+    updateProject,
+    archiveProject,
+    restoreProject,
+    deleteProject,
+};
