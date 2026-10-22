@@ -253,4 +253,5 @@ export interface AuthContextValue {
     login: (email: string, password: string) => Promise<User>;
     register: (name: string, email: string, password: string) => Promise<User>;
     logout: () => Promise<void>;
+    logoutAll: () => Promise<void>;
 }

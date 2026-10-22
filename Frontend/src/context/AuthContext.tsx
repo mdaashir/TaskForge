@@ -55,8 +55,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const logoutAll = async () => {
+        try {
+            await axiosInstance.post(API_PATHS.auth.logoutAll);
+        } finally {
+            setAccessToken(null);
+            setUser(null);
+        }
+    };
+
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, loading, login, register, logout, logoutAll }}>
             {children}
         </AuthContext.Provider>
     );

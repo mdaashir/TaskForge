@@ -12,6 +12,7 @@ router.post('/register', validateRequestBody(registerSchema), auth.registerUser)
 router.post('/login', validateRequestBody(loginSchema), auth.loginUser);
 router.post('/refresh', auth.refreshAccessToken);
 router.post('/logout', auth.logoutUser);
+router.post('/logout-all', authorize(anyAuthenticated), auth.logoutAll);
 router.get('/profile', authorize(anyAuthenticated), auth.getUserProfile);
 router.put(
     '/profile',

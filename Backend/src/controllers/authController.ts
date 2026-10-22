@@ -87,6 +87,12 @@ async function refreshAccessToken(req: Request, res: Response) {
             clearRefreshCookie(res);
             return res.status(401).json({ message: 'This account has been archived.' });
         }
+        if ((decoded.ver ?? 0) !== (user.tokenVersion ?? 0)) {
+            clearRefreshCookie(res);
+            return res
+                .status(401)
+                .json({ message: 'Your session has expired. Please sign in again.' });
+        }
 
         setRefreshCookie(res, generateRefreshToken(user));
         return res.status(200).json({ accessToken: generateAccessToken(user) });
@@ -102,6 +108,23 @@ async function logoutUser(_req: Request, res: Response) {
     try {
         clearRefreshCookie(res);
         return res.status(200).json({ message: 'Logged out successfully.' });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error',
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
+async function logoutAll(req: RequestWithUser, res: Response) {
+    try {
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+
+        const result = await userService.invalidateSessions(req.user._id as Types.ObjectId);
+        if ('message' in result) return res.status(404).json({ message: result.message });
+
+        clearRefreshCookie(res);
+        return res.status(200).json({ message: 'Signed out of all sessions.' });
     } catch (error) {
         return res.status(500).json({
             message: 'Server error',
@@ -170,6 +193,7 @@ export default {
     loginUser,
     refreshAccessToken,
     logoutUser,
+    logoutAll,
     getUserProfile,
     updateUserProfile,
     getProfileImage,
