@@ -3,13 +3,21 @@ import { Types } from 'mongoose';
 import userService from '../services/userService.ts';
 import type { RequestWithUser } from '../types.ts';
 
+const problemStatus = (result: object) =>
+    'error' in result ? 500 : 'invalid' in result ? 400 : 404;
+
 async function listUsers(req: Request, res: Response) {
     try {
         const page = Number(req.query.page) || 1;
         const limit = Number(req.query.limit) || 20;
         const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+        const archivedQuery = req.query.archived;
+        const archived =
+            archivedQuery === 'active' || archivedQuery === 'archived' || archivedQuery === 'all'
+                ? archivedQuery
+                : undefined;
 
-        const result = await userService.getAll({ page, limit, search });
+        const result = await userService.getAll({ page, limit, search, archived });
         if ('message' in result)
             return res.status('error' in result ? 500 : 400).json({ message: result.message });
 
@@ -117,4 +125,51 @@ async function listUserOptions(_req: Request, res: Response) {
     }
 }
 
-export default { listUsers, listUserOptions, getUserById, createUser, updateUser, deleteUser };
+async function archiveUser(req: RequestWithUser, res: Response) {
+    try {
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+        if (!Types.ObjectId.isValid(req.params.id))
+            return res.status(400).json({ message: 'Invalid user id' });
+
+        const result = await userService.archive(new Types.ObjectId(req.params.id), req.user);
+        if ('message' in result)
+            return res.status(problemStatus(result)).json({ message: result.message });
+
+        return res.status(200).json({ message: 'User archived successfully.', user: result.user });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error',
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
+async function restoreUser(req: RequestWithUser, res: Response) {
+    try {
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+        if (!Types.ObjectId.isValid(req.params.id))
+            return res.status(400).json({ message: 'Invalid user id' });
+
+        const result = await userService.restore(new Types.ObjectId(req.params.id), req.user);
+        if ('message' in result)
+            return res.status(problemStatus(result)).json({ message: result.message });
+
+        return res.status(200).json({ message: 'User restored successfully.', user: result.user });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error',
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
+export default {
+    listUsers,
+    listUserOptions,
+    getUserById,
+    createUser,
+    updateUser,
+    archiveUser,
+    restoreUser,
+    deleteUser,
+};
