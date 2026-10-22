@@ -83,6 +83,11 @@ async function refreshAccessToken(req: Request, res: Response) {
             return res.status('error' in result ? 500 : 401).json({ message: result.message });
 
         const user = result.user;
+        if (user.archived) {
+            clearRefreshCookie(res);
+            return res.status(401).json({ message: 'This account has been archived.' });
+        }
+
         setRefreshCookie(res, generateRefreshToken(user));
         return res.status(200).json({ accessToken: generateAccessToken(user) });
     } catch (error) {

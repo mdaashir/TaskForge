@@ -20,6 +20,7 @@ async function authenticate(req: RequestWithUser) {
             if (typeof decoded === 'object' && decoded.id) {
                 req.user = await User.findById(decoded.id).select('-password');
                 if (!req.user) return { message: 'Not authorized, user not found' };
+                if (req.user.archived) return { message: 'This account has been archived.' };
                 return;
             }
             return { message: 'Not authorized, invalid token' };
