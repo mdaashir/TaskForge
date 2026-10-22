@@ -27,6 +27,7 @@ const ManageTasks = () => {
     const [search, setSearch] = useState('');
     const [projectId, setProjectId] = useState('');
     const [status, setStatus] = useState('');
+    const [showArchived, setShowArchived] = useState(false);
     const [loading, setLoading] = useState(false);
     const [exporting, setExporting] = useState(false);
 
@@ -40,6 +41,7 @@ const ManageTasks = () => {
                     search: search || undefined,
                     projectId: projectId || undefined,
                     status: status || undefined,
+                    archived: showArchived ? 'archived' : undefined,
                 },
             });
             setTasks(data.tasks);
@@ -49,7 +51,7 @@ const ManageTasks = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, search, projectId, status]);
+    }, [page, search, projectId, status, showArchived]);
 
     useEffect(() => {
         void fetchTasks();
@@ -60,7 +62,7 @@ const ManageTasks = () => {
             try {
                 const { data } = await axiosInstance.get<ProjectListResponse>(
                     API_PATHS.projects.list,
-                    { params: { limit: 100 } }
+                    { params: { limit: 100, archived: 'all' } }
                 );
                 setProjects(data.projects);
             } catch {
@@ -75,6 +77,21 @@ const ManageTasks = () => {
         try {
             await axiosInstance.delete(API_PATHS.tasks.byId(task._id));
             toast.success('Task deleted');
+            await fetchTasks();
+        } catch (error) {
+            toast.error(getErrorMessage(error));
+        }
+    };
+
+    const handleArchiveToggle = async (task: Task) => {
+        try {
+            if (task.archived) {
+                await axiosInstance.put(API_PATHS.tasks.restore(task._id));
+                toast.success('Task restored');
+            } else {
+                await axiosInstance.put(API_PATHS.tasks.archive(task._id));
+                toast.success('Task archived');
+            }
             await fetchTasks();
         } catch (error) {
             toast.error(getErrorMessage(error));
@@ -107,6 +124,17 @@ const ManageTasks = () => {
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
                 <h1 className="text-2xl font-semibold text-slate-800">Tasks</h1>
                 <div className="flex items-center gap-2">
+                    <label className="flex items-center gap-2 text-sm text-slate-600">
+                        <input
+                            type="checkbox"
+                            checked={showArchived}
+                            onChange={(event) => {
+                                setPage(1);
+                                setShowArchived(event.target.checked);
+                            }}
+                        />
+                        Show archived
+                    </label>
                     <button
                         type="button"
                         onClick={handleExport}
@@ -197,7 +225,14 @@ const ManageTasks = () => {
                         ) : (
                             tasks.map((task) => (
                                 <tr key={task._id} className="border-t border-slate-100">
-                                    <td className="px-4 py-3 text-slate-700">{task.title}</td>
+                                    <td className="px-4 py-3 text-slate-700">
+                                        {task.title}
+                                        {task.archived && (
+                                            <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                                                Archived
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-3 text-slate-500">
                                         {projectName(task)}
                                     </td>
@@ -221,6 +256,13 @@ const ManageTasks = () => {
                                         >
                                             Edit
                                         </Link>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleArchiveToggle(task)}
+                                            className="mr-3 font-medium text-slate-600"
+                                        >
+                                            {task.archived ? 'Restore' : 'Archive'}
+                                        </button>
                                         <button
                                             type="button"
                                             onClick={() => handleDelete(task)}

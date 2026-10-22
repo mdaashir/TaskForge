@@ -13,11 +13,14 @@ const projectName = (task: Task) =>
 const MyTasks = () => {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showArchived, setShowArchived] = useState(false);
 
     useEffect(() => {
         const load = async () => {
             try {
-                const { data } = await axiosInstance.get<TaskListResponse>(API_PATHS.tasks.mine);
+                const { data } = await axiosInstance.get<TaskListResponse>(API_PATHS.tasks.mine, {
+                    params: { archived: showArchived ? 'archived' : undefined },
+                });
                 setTasks(data.tasks);
             } catch (error) {
                 toast.error(getErrorMessage(error));
@@ -26,11 +29,21 @@ const MyTasks = () => {
             }
         };
         void load();
-    }, []);
+    }, [showArchived]);
 
     return (
         <div className="mx-auto max-w-5xl p-6">
-            <h1 className="mb-6 text-2xl font-semibold text-slate-800">My tasks</h1>
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+                <h1 className="text-2xl font-semibold text-slate-800">My tasks</h1>
+                <label className="flex items-center gap-2 text-sm text-slate-600">
+                    <input
+                        type="checkbox"
+                        checked={showArchived}
+                        onChange={(event) => setShowArchived(event.target.checked)}
+                    />
+                    Show archived
+                </label>
+            </div>
 
             <div className="overflow-hidden rounded-xl bg-white shadow-sm">
                 <table className="w-full text-left text-sm">
@@ -61,7 +74,14 @@ const MyTasks = () => {
                         ) : (
                             tasks.map((task) => (
                                 <tr key={task._id} className="border-t border-slate-100">
-                                    <td className="px-4 py-3 text-slate-700">{task.title}</td>
+                                    <td className="px-4 py-3 text-slate-700">
+                                        {task.title}
+                                        {task.archived && (
+                                            <span className="ml-2 rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-700">
+                                                Archived
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="px-4 py-3 text-slate-500">
                                         {projectName(task)}
                                     </td>

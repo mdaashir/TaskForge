@@ -27,11 +27,15 @@ export const API_PATHS = {
     projects: {
         list: PROJECTS,
         byId: (id: string) => `${PROJECTS}/${id}`,
+        archive: (id: string) => `${PROJECTS}/${id}/archive`,
+        restore: (id: string) => `${PROJECTS}/${id}/restore`,
     },
     tasks: {
         list: TASKS,
         mine: `${TASKS}/mine`,
         byId: (id: string) => `${TASKS}/${id}`,
+        archive: (id: string) => `${TASKS}/${id}/archive`,
+        restore: (id: string) => `${TASKS}/${id}/restore`,
     },
     reports: {
         tasks: `${REPORTS}/tasks`,
