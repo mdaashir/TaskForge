@@ -15,6 +15,8 @@ router.get('/', task.listTasks);
 router.get('/:id', task.getTaskById);
 router.post('/', validateRequestBody(createTaskSchema), task.createTask);
 router.put('/:id', validateRequestBody(updateTaskSchema), task.updateTask);
+router.put('/:id/archive', task.archiveTask);
+router.put('/:id/restore', task.restoreTask);
 router.delete('/:id', task.deleteTask);
 
 export default router;
