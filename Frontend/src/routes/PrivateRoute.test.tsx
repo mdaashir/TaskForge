@@ -19,6 +19,7 @@ const mockAuth = (value: Partial<AuthContextValue>) => {
         login: vi.fn(),
         register: vi.fn(),
         logout: vi.fn(),
+        logoutAll: vi.fn(),
         ...value,
     } as AuthContextValue);
 };

@@ -10,7 +10,7 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
     }`;
 
 const AppLayout = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, logoutAll } = useAuth();
     const navigate = useNavigate();
 
     const links =
@@ -35,6 +35,12 @@ const AppLayout = () => {
         navigate('/login', { replace: true });
     };
 
+    const handleLogoutAll = async () => {
+        if (!window.confirm('Sign out of every device?')) return;
+        await logoutAll();
+        navigate('/login', { replace: true });
+    };
+
     return (
         <div className="min-h-screen bg-slate-50">
             <header className="border-b border-slate-200 bg-white">
@@ -49,6 +55,13 @@ const AppLayout = () => {
                     </nav>
                     <span className="text-sm text-slate-500">{user?.name}</span>
                     <NotificationBell />
+                    <button
+                        type="button"
+                        onClick={handleLogoutAll}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600"
+                    >
+                        Sign out everywhere
+                    </button>
                     <button
                         type="button"
                         onClick={handleLogout}

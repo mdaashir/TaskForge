@@ -15,6 +15,7 @@ export const API_PATHS = {
         login: `${AUTH}/login`,
         refresh: `${AUTH}/refresh`,
         logout: `${AUTH}/logout`,
+        logoutAll: `${AUTH}/logout-all`,
         profile: `${AUTH}/profile`,
         profileImage: (value: string) => `${AUTH}/profile/image/${encodeURIComponent(value)}`,
     },
