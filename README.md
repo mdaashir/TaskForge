@@ -9,6 +9,8 @@ notifications, dashboards, Excel reports, an audit trail and nested workflows.
 
 - **Projects** — owner and members, status, priority, progress, dates, tags.
 - **Tasks** — per-project tasks with checklists, assignment, status and due dates.
+- **Archive & restore** — soft-delete projects and tasks; archived projects' tasks are hidden by
+  association and return when the project is restored.
 - **Workflows** — nested containers that link projects; progress rolls up from them.
 - **Comments** — one level of replies per task, with author/admin edit rules.
 - **Attachments** — files on tasks and projects, streamed through the API (never public URLs).
@@ -80,6 +82,10 @@ Three member types exist: `ADMIN`, `USER` and `VIEWER`.
 | Audit log     | admin                             | —                                                    | —                                          |
 
 Workflow membership does **not** grant project access; a linked project's own rules still apply.
+
+Archive and restore use the same permission as delete in each area: projects by the owner or an
+admin, tasks by the creator or an admin. Archived records are hidden by default; list endpoints
+accept `archived=archived` or `archived=all`.
 
 ## Getting started
 
@@ -182,7 +188,7 @@ docker compose exec mongo mongosh taskforge --eval \
 | `npm start`          | Node 26 on `src/server.ts`                   |
 | `npm run build`      | Typecheck (`tsc --noEmit`)                   |
 | `npm run lint`       | ESLint over `src`                            |
-| `npm test`           | Vitest (48 tests, needs MongoDB)             |
+| `npm test`           | Vitest (56 tests, needs MongoDB)             |
 | `npm run test:watch` | Vitest in watch mode                         |
 
 ### Frontend
@@ -217,10 +223,14 @@ All routes are mounted under `PREFIX` (`/api` by default).
 | GET    | `/projects`, `/projects/:id`         | authenticated (filtered) | Visible projects                          |
 | POST   | `/projects`                          | authenticated            | Create a project                          |
 | PUT    | `/projects/:id`                      | owner, member, admin     | Update a project                          |
+| PUT    | `/projects/:id/archive`              | owner, admin             | Archive a project                         |
+| PUT    | `/projects/:id/restore`              | owner, admin             | Restore an archived project               |
 | DELETE | `/projects/:id`                      | owner, admin             | Delete a project                          |
 | GET    | `/tasks`, `/tasks/mine`, `/tasks/:id`| authenticated (filtered) | Visible / assigned tasks                  |
 | POST   | `/tasks`                             | project members          | Create a task                             |
 | PUT    | `/tasks/:id`                         | creator, admin           | Update a task                             |
+| PUT    | `/tasks/:id/archive`                 | creator, admin           | Archive a task                            |
+| PUT    | `/tasks/:id/restore`                 | creator, admin           | Restore an archived task                  |
 | DELETE | `/tasks/:id`                         | creator, admin           | Delete a task                             |
 | GET    | `/workflows`, `/workflows/:id`       | authenticated (filtered) | Visible workflows                         |
 | POST   | `/workflows`                         | authenticated            | Create a workflow                         |
@@ -270,6 +280,9 @@ frontend job runs lint, build and its suite.
 - Attachments are proxied through the API, so project access is always checked and no bucket CORS
   is needed.
 - Reports reuse the same filter builders as the list endpoints, so screen and export cannot drift.
+- Archiving is a soft delete: the record and its data stay in MongoDB, and the list endpoints hide
+  it unless `archived=archived` or `archived=all` is passed. Archiving a project does not write
+  anything to its tasks — they are hidden because their project is archived.
 - There are no coverage thresholds and no app Dockerfiles yet; the compose file is for local
   dependencies only.
 - `File.commentId` exists in the schema, but comment attachments are not wired up in the API or UI.
