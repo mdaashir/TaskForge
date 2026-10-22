@@ -13,6 +13,8 @@ notifications, dashboards, Excel reports, an audit trail and nested workflows.
   association and return when the project is restored.
 - **User deactivation** — admins can archive an account; login, refresh and already-issued access
   tokens stop working until it is restored, while its data and references stay intact.
+- **Session invalidation** — every token carries the user's `tokenVersion`; a password change or
+  "sign out everywhere" revokes every previously issued access and refresh token.
 - **Workflows** — nested containers that link projects; progress rolls up from them.
 - **Comments** — one level of replies per task, with author/admin edit rules.
 - **Attachments** — files on tasks and projects, streamed through the API (never public URLs).
@@ -62,7 +64,8 @@ TaskForge/
 **Auth model.** A 15-minute access JWT is returned in the login/refresh response body and kept in
 memory by the SPA (never `localStorage`). A 7-day refresh JWT lives in an `httpOnly`,
 `SameSite=strict` cookie scoped to the refresh path and is rotated on every refresh. The axios
-client retries a `401` once after refreshing.
+client retries a `401` once after refreshing. Both tokens carry the user's `tokenVersion`; bumping
+it (password change or sign out everywhere) invalidates every session immediately.
 
 **Layering.** Routes validate and delegate; controllers only map results to status codes; services
 own the business rules and call the access helpers. Derived arrays (`Project.tasks`,
@@ -191,7 +194,7 @@ docker compose exec mongo mongosh taskforge --eval \
 | `npm start`          | Node 26 on `src/server.ts`                   |
 | `npm run build`      | Typecheck (`tsc --noEmit`)                   |
 | `npm run lint`       | ESLint over `src`                            |
-| `npm test`           | Vitest (63 tests, needs MongoDB)             |
+| `npm test`           | Vitest (68 tests, needs MongoDB)             |
 | `npm run test:watch` | Vitest in watch mode                         |
 
 ### Frontend
@@ -213,7 +216,8 @@ All routes are mounted under `PREFIX` (`/api` by default).
 | POST   | `/auth/register`                     | public                   | Create an account, return an access token |
 | POST   | `/auth/login`                        | public                   | Sign in, return an access token           |
 | POST   | `/auth/refresh`                      | refresh cookie           | Rotate the cookie, return a new token     |
-| POST   | `/auth/logout`                       | public                   | Clear the refresh cookie                  |
+| POST   | `/auth/logout`                       | public                   | Clear the refresh cookie                 |
+| POST   | `/auth/logout-all`                   | authenticated            | Revoke every session for the user        |
 | GET    | `/auth/profile`                      | authenticated            | Current user                              |
 | PUT    | `/auth/profile`                      | authenticated            | Update own profile                        |
 | GET    | `/auth/profile/image/:value`         | public                   | Generated SVG avatar                      |
@@ -302,6 +306,9 @@ production advisories are cleared in both apps.
   anything to its tasks — they are hidden because their project is archived.
 - An archived user cannot log in or refresh, and an access token issued before the archive is
   rejected on its next request: the auth middleware reloads the user from MongoDB every time.
+- Changing a password (self or through an admin) bumps the token version, so every existing access
+  and refresh token stops working — including the session that made the change. A single `logout`
+  only clears the current device's cookie; use `logout-all` to revoke other devices.
 - There are no coverage thresholds and no app Dockerfiles yet; the compose file is for local
   dependencies only.
 - `File.commentId` exists in the schema, but comment attachments are not wired up in the API or UI.
