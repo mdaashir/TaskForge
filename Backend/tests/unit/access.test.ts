@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { IProject, IUser } from '../../src/types.ts';
 import { canDeleteProject, canViewProject, idOf, isAdmin } from '../../src/utils/access.ts';
 
-const user = (id: string, memberType: IUser['memberType']) => ({ _id: id, memberType }) as IUser;
+const user = (id: string, memberType: IUser['memberType']) =>
+    ({ _id: id, memberType }) as unknown as IUser;
 const project = (owner: string, members: string[]) =>
     ({ _id: 'p1', owner, members }) as unknown as IProject;
 
@@ -29,7 +30,7 @@ describe('isAdmin', () => {
 });
 
 describe('canViewProject', () => {
-    const subject = project(owner._id as string, [member._id as string]);
+    const subject = project('owner', ['member']);
 
     it('allows the owner, a member and an admin', () => {
         expect(canViewProject(subject, owner)).toBe(true);
@@ -43,7 +44,7 @@ describe('canViewProject', () => {
 });
 
 describe('canDeleteProject', () => {
-    const subject = project(owner._id as string, [member._id as string]);
+    const subject = project('owner', ['member']);
 
     it('allows the owner and an admin', () => {
         expect(canDeleteProject(subject, owner)).toBe(true);

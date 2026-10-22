@@ -280,6 +280,18 @@ CI (`.github/workflows/ci.yml`) runs on every push to `base` and every PR into `
 job starts a `mongo:7` service and runs typecheck (including tests), lint and the suite; the
 frontend job runs lint, build and its suite.
 
+### Dependency audit
+
+Both apps are checked for known production advisories, locally and in CI:
+
+```bash
+npm audit --omit=dev --audit-level=critical
+```
+
+One moderate advisory remains in the backend (`uuid` through `exceljs` 4.x); the only automated
+fix downgrades `exceljs` to 3.4.0, so it is deliberately left in place. All high and critical
+production advisories are cleared in both apps.
+
 ## Notes
 
 - Attachments are proxied through the API, so project access is always checked and no bucket CORS

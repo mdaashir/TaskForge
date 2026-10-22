@@ -43,6 +43,7 @@ jobs:
           cache-dependency-path: Backend/package-lock.json
 
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=critical
       - run: npm run build
       - run: npm run lint
       - run: npx tsc -p tsconfig.test.json --noEmit
@@ -66,6 +67,7 @@ jobs:
           cache-dependency-path: Frontend/package-lock.json
 
       - run: npm ci
+      - run: npm audit --omit=dev --audit-level=critical
       - run: npm run lint
       - run: npm run build
       - run: npm test
