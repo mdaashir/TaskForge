@@ -21,6 +21,9 @@ async function authenticate(req: RequestWithUser) {
                 req.user = await User.findById(decoded.id).select('-password');
                 if (!req.user) return { message: 'Not authorized, user not found' };
                 if (req.user.archived) return { message: 'This account has been archived.' };
+                if ((decoded.ver ?? 0) !== (req.user.tokenVersion ?? 0)) {
+                    return { message: 'Your session has expired. Please sign in again.' };
+                }
                 return;
             }
             return { message: 'Not authorized, invalid token' };

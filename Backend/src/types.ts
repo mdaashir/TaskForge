@@ -35,6 +35,7 @@ interface IUser extends Document {
     archived?: boolean;
     archivedAt?: Date;
     archivedBy?: Types.ObjectId;
+    tokenVersion?: number;
     lastLogin?: Date;
     isSynced?: boolean;
     syncedAt?: Date;
@@ -177,6 +178,7 @@ interface RequestWithUser extends Request {
 
 interface JwtPayloadWithId extends jwt.JwtPayload {
     id: Types.ObjectId;
+    ver?: number;
 }
 
 export type {
