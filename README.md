@@ -194,7 +194,7 @@ docker compose exec mongo mongosh taskforge --eval \
 | `npm start`          | Node 26 on `src/server.ts`                   |
 | `npm run build`      | Typecheck (`tsc --noEmit`)                   |
 | `npm run lint`       | ESLint over `src`                            |
-| `npm test`           | Vitest (68 tests, needs MongoDB)             |
+| `npm test`           | Vitest (75 tests, needs MongoDB + MinIO)     |
 | `npm run test:watch` | Vitest in watch mode                         |
 
 ### Frontend
@@ -265,23 +265,24 @@ All routes are mounted under `PREFIX` (`/api` by default).
 
 ## Tests
 
-The backend suite runs against a real MongoDB, never a mock:
+The backend suite runs against a real MongoDB **and MinIO**, never mocks:
 
 ```bash
-docker compose up -d mongo
+docker compose up -d          # MongoDB + MinIO (+ the attachments bucket)
 cd Backend && npm test
 ```
 
-It uses `MONGO_URI_TEST` (default `mongodb://127.0.0.1:27017/taskforge_test`) and refuses to clear
-any database whose name does not end in `_test`. The API app is imported directly (`src/app.ts`),
-so no port is opened during tests.
+The attachment tests use the `S3_*` variables; `Backend/.env.example` already contains working
+values for the compose stack. It uses `MONGO_URI_TEST` (default
+`mongodb://127.0.0.1:27017/taskforge_test`) and refuses to clear any database whose name does not
+end in `_test`. The API app is imported directly (`src/app.ts`), so no port is opened during tests.
 
 ```bash
 cd Frontend && npm test
 ```
 
 CI (`.github/workflows/ci.yml`) runs on every push to `base` and every PR into `base`: the backend
-job starts a `mongo:7` service and runs typecheck (including tests), lint and the suite; the
+job starts MongoDB and MinIO, then runs typecheck (including tests), lint and the suite; the
 frontend job runs lint, build and its suite.
 
 ### Dependency audit
