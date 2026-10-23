@@ -4,6 +4,7 @@ import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand } from '@aws-sd
 import { Types } from 'mongoose';
 import { getStorage } from '../config/storage.ts';
 import { Actions, Entity } from '../enums/enums.ts';
+import commentModel from '../models/Comment.ts';
 import fileModel from '../models/File.ts';
 import projectModel from '../models/Project.ts';
 import taskModel from '../models/Task.ts';
@@ -41,7 +42,11 @@ async function saveFile(
     prefix: string,
     file: Express.Multer.File,
     actor: IUser,
-    link: { taskId?: Types.ObjectId; projectId: Types.ObjectId }
+    link: {
+        taskId?: Types.ObjectId;
+        projectId: Types.ObjectId;
+        commentId?: Types.ObjectId;
+    }
 ) {
     const key = await putObject(prefix, file);
 
@@ -55,7 +60,12 @@ async function saveFile(
         ...link,
     });
 
-    if (link.taskId) {
+    if (link.commentId) {
+        await commentModel.updateOne(
+            { _id: link.commentId },
+            { $push: { attachments: doc._id } }
+        );
+    } else if (link.taskId) {
         await taskModel.updateOne({ _id: link.taskId }, { $push: { attachments: doc._id } });
     } else {
         await projectModel.updateOne(
@@ -111,6 +121,46 @@ async function uploadForProject(projectId: string, file: Express.Multer.File, ac
     }
 }
 
+async function uploadForComment(commentId: string, file: Express.Multer.File, actor: IUser) {
+    try {
+        if (!Types.ObjectId.isValid(commentId)) return invalidId('comment');
+        const comment = await commentModel.findById(commentId);
+        if (!comment) return notFound('Comment');
+
+        const project = await projectModel.findById(comment.projectId);
+        if (!project) return notFound('Project');
+        if (!canViewProject(project, actor)) return accessDenied();
+
+        const doc = await saveFile(`comments/${comment._id}`, file, actor, {
+            commentId: comment._id as Types.ObjectId,
+            projectId: project._id as Types.ObjectId,
+        });
+        return { file: doc };
+    } catch (error) {
+        return storageError(error);
+    }
+}
+
+async function listForComment(commentId: string, actor: IUser) {
+    try {
+        if (!Types.ObjectId.isValid(commentId)) return invalidId('comment');
+        const comment = await commentModel.findById(commentId);
+        if (!comment) return notFound('Comment');
+
+        const project = await projectModel.findById(comment.projectId);
+        if (!project) return notFound('Project');
+        if (!canViewProject(project, actor)) return accessDenied();
+
+        const files = await fileModel
+            .find({ commentId: comment._id })
+            .populate('uploadedBy', 'name email')
+            .sort({ createdAt: -1 });
+        return { files };
+    } catch (error) {
+        return storageError(error);
+    }
+}
+
 async function listForTask(taskId: string, actor: IUser) {
     try {
         if (!Types.ObjectId.isValid(taskId)) return invalidId('task');
@@ -139,7 +189,7 @@ async function listForProject(projectId: string, actor: IUser) {
         if (!canViewProject(project, actor)) return accessDenied();
 
         const files = await fileModel
-            .find({ projectId: project._id, taskId: { $exists: false } })
+            .find({ projectId: project._id, taskId: { $exists: false }, commentId: { $exists: false } })
             .populate('uploadedBy', 'name email')
             .sort({ createdAt: -1 });
         return { files };
@@ -197,11 +247,18 @@ async function remove(fileId: string, actor: IUser) {
         const docId = file._id;
         const taskId = file.taskId;
         const projectId = file.projectId;
+        const commentId = file.commentId;
         const before = file.toObject();
         await file.deleteOne();
 
-        if (taskId) await taskModel.updateOne({ _id: taskId }, { $pull: { attachments: docId } });
-        else if (projectId) {
+        if (commentId) {
+            await commentModel.updateOne(
+                { _id: commentId },
+                { $pull: { attachments: docId } }
+            );
+        } else if (taskId) {
+            await taskModel.updateOne({ _id: taskId }, { $pull: { attachments: docId } });
+        } else if (projectId) {
             await projectModel.updateOne({ _id: projectId }, { $pull: { attachments: docId } });
         }
 
@@ -219,4 +276,42 @@ async function remove(fileId: string, actor: IUser) {
     }
 }
 
-export default { uploadForTask, uploadForProject, listForTask, listForProject, download, remove };
+/** Removes the attachments belonging to deleted comments; storage cleanup is best-effort. */
+async function removeForComments(commentIds: Types.ObjectId[]) {
+    if (commentIds.length === 0) return { removed: 0 };
+
+    const files = await fileModel.find({ commentId: { $in: commentIds } });
+    if (files.length === 0) return { removed: 0 };
+
+    try {
+        const { client, bucket } = getStorage();
+        await Promise.all(
+            files.map(async (file) => {
+                try {
+                    await client.send(
+                        new DeleteObjectCommand({ Bucket: bucket, Key: file.url })
+                    );
+                } catch {
+                    // best-effort: the document is removed regardless
+                }
+            })
+        );
+    } catch {
+        // storage is not configured; still remove the documents
+    }
+
+    await fileModel.deleteMany({ _id: { $in: files.map((file) => file._id) } });
+    return { removed: files.length };
+}
+
+export default {
+    uploadForTask,
+    uploadForProject,
+    uploadForComment,
+    listForTask,
+    listForProject,
+    listForComment,
+    download,
+    remove,
+    removeForComments,
+};

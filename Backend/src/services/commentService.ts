@@ -6,6 +6,7 @@ import taskModel from '../models/Task.ts';
 import type { IComment, IProject, ITask, IUser } from '../types.ts';
 import { canViewProject, idOf, isAdmin } from '../utils/access.ts';
 import auditService from './auditService.ts';
+import fileService from './fileService.ts';
 import notificationService from './notificationService.ts';
 
 type CommentView = Record<string, unknown> & { replies: CommentView[] };
@@ -49,6 +50,11 @@ async function listForTask(taskId: string, actor: IUser) {
         const comments = await commentModel
             .find({ taskId: loaded.task._id })
             .populate('createdBy', 'name email')
+            .populate({
+                path: 'attachments',
+                select: 'name originalName size type createdAt uploadedBy',
+                populate: { path: 'uploadedBy', select: 'name email' },
+            })
             .sort({ createdAt: 1 });
 
         const nodes = new Map<string, CommentView>();
@@ -175,6 +181,12 @@ async function remove(commentId: string, actor: IUser) {
         const comment: IComment = loaded.comment;
         const ids = [comment._id as Types.ObjectId, ...(comment.childrenId ?? [])];
         const before = comment.toObject();
+
+        try {
+            await fileService.removeForComments(ids);
+        } catch {
+            // attachment cleanup is best-effort; deleting the comment must not fail
+        }
 
         await commentModel.deleteMany({ _id: { $in: ids } });
         await taskModel.updateOne(
