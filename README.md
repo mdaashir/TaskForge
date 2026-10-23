@@ -17,7 +17,8 @@ notifications, dashboards, Excel reports, an audit trail and nested workflows.
   "sign out everywhere" revokes every previously issued access and refresh token.
 - **Workflows** — nested containers that link projects; progress rolls up from them.
 - **Comments** — one level of replies per task, with author/admin edit rules.
-- **Attachments** — files on tasks and projects, streamed through the API (never public URLs).
+- **Attachments** — files on tasks, projects and comments, streamed through the API (never public
+  URLs); deleting a comment removes its files.
 - **Notifications** — one document per recipient, with an unread count and a bell in the layout.
 - **Dashboards** — admin and member scopes, status breakdowns and overdue counts.
 - **Reports** — server-generated `.xlsx` exports that reuse the list filters.
@@ -194,7 +195,7 @@ docker compose exec mongo mongosh taskforge --eval \
 | `npm start`          | Node 26 on `src/server.ts`                   |
 | `npm run build`      | Typecheck (`tsc --noEmit`)                   |
 | `npm run lint`       | ESLint over `src`                            |
-| `npm test`           | Vitest (75 tests, needs MongoDB + MinIO)     |
+| `npm test`           | Vitest (81 tests, needs MongoDB + MinIO)     |
 | `npm run test:watch` | Vitest in watch mode                         |
 
 ### Frontend
@@ -252,8 +253,10 @@ All routes are mounted under `PREFIX` (`/api` by default).
 | POST   | `/files/tasks/:taskId`               | project members          | Upload a task attachment                  |
 | GET    | `/files/tasks/:taskId`               | project members          | List task attachments                     |
 | POST   | `/files/projects/:projectId`         | project members          | Upload a project attachment               |
-| GET    | `/files/projects/:projectId`         | project members          | List project attachments                  |
-| GET    | `/files/:id`                         | project members          | Download an attachment                    |
+| GET    | `/files/projects/:projectId`         | project members          | List project attachments                 |
+| POST   | `/files/comments/:commentId`         | project members          | Upload a comment attachment              |
+| GET    | `/files/comments/:commentId`         | project members          | List comment attachments                 |
+| GET    | `/files/:id`                         | project members          | Download an attachment                   |
 | DELETE | `/files/:id`                         | uploader, admin          | Delete an attachment                      |
 | GET    | `/notifications`                     | authenticated            | Own notifications (`limit`, `unread`)     |
 | GET    | `/notifications/unread-count`        | authenticated            | Unread count                              |
@@ -301,6 +304,9 @@ production advisories are cleared in both apps.
 
 - Attachments are proxied through the API, so project access is always checked and no bucket CORS
   is needed.
+- Comment attachments are stored with `commentId` and `projectId` (no `taskId`), so they never
+  appear in task or project attachment lists. Deleting a comment removes its files; storage cleanup
+  is best-effort and never blocks the delete.
 - Reports reuse the same filter builders as the list endpoints, so screen and export cannot drift.
 - Archiving is a soft delete: the record and its data stay in MongoDB, and the list endpoints hide
   it unless `archived=archived` or `archived=all` is passed. Archiving a project does not write

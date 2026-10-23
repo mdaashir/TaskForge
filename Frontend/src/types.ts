@@ -170,6 +170,7 @@ export interface TaskComment {
     text: string;
     createdBy?: UserOption | string;
     parentId?: string;
+    attachments?: FileAttachment[];
     replies: TaskComment[];
     createdAt?: string;
     updatedAt?: string;

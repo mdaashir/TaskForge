@@ -26,6 +26,12 @@ export const refId = (value?: { _id: string } | string): string =>
 export const refName = (value?: { name: string } | string): string =>
     !value ? '—' : typeof value === 'string' ? value : value.name;
 
+export const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
 export const labelOf = (options: { value: string; label: string }[], value: string): string =>
     options.find((option) => option.value === value)?.label ?? value;
 

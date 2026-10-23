@@ -74,6 +74,43 @@ async function listProjectFiles(req: RequestWithUser, res: Response) {
     }
 }
 
+async function uploadCommentFile(req: RequestWithUser, res: Response) {
+    try {
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+        if (!req.file) return res.status(400).json({ message: 'A file is required' });
+
+        const result = await fileService.uploadForComment(
+            req.params.commentId,
+            req.file,
+            req.user
+        );
+        if ('message' in result) return failure(res, result);
+
+        return res.status(201).json({ message: 'File uploaded successfully.', file: result.file });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error',
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
+async function listCommentFiles(req: RequestWithUser, res: Response) {
+    try {
+        if (!req.user) return res.status(401).json({ message: 'Not authorized' });
+
+        const result = await fileService.listForComment(req.params.commentId, req.user);
+        if ('message' in result) return failure(res, result);
+
+        return res.status(200).json({ files: result.files });
+    } catch (error) {
+        return res.status(500).json({
+            message: 'Server error',
+            error: error instanceof Error ? error.message : String(error),
+        });
+    }
+}
+
 async function downloadFile(req: RequestWithUser, res: Response) {
     try {
         if (!req.user) return res.status(401).json({ message: 'Not authorized' });
@@ -124,6 +161,8 @@ export default {
     listTaskFiles,
     uploadProjectFile,
     listProjectFiles,
+    uploadCommentFile,
+    listCommentFiles,
     downloadFile,
     deleteFile,
 };
