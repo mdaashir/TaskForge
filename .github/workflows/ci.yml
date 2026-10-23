@@ -32,6 +32,11 @@ jobs:
       JWT_SECRET: ci-access-secret
       REFRESH_TOKEN_SECRET: ci-refresh-secret
       PREFIX: /api
+      S3_ENDPOINT: http://127.0.0.1:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: taskforge-attachments
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
 
     steps:
       - uses: actions/checkout@v4
@@ -44,6 +49,25 @@ jobs:
 
       - run: npm ci
       - run: npm audit --omit=dev --audit-level=critical
+
+      - name: Start MinIO
+        run: |
+          docker run -d --name minio \
+            -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin \
+            -e MINIO_ROOT_PASSWORD=minioadmin \
+            -e MINIO_DEFAULT_BUCKETS=taskforge-attachments \
+            bitnamilegacy/minio:latest
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:9000/minio/health/live; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'MinIO did not become ready' >&2
+          docker logs minio >&2
+          exit 1
+
       - run: npm run build
       - run: npm run lint
       - run: npx tsc -p tsconfig.test.json --noEmit
