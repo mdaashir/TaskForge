@@ -56,12 +56,17 @@ jobs:
             -p 9000:9000 \
             -e MINIO_ROOT_USER=minioadmin \
             -e MINIO_ROOT_PASSWORD=minioadmin \
-            minio/minio server /data
-
-      - name: Create the attachments bucket
-        run: |
-          docker run --rm --network host minio/mc:latest \
-            sh -c 'until mc alias set local http://127.0.0.1:9000 minioadmin minioadmin; do sleep 1; done; mc mb --ignore-existing local/taskforge-attachments'
+            -e MINIO_DEFAULT_BUCKETS=taskforge-attachments \
+            bitnamilegacy/minio:latest
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:9000/minio/health/live; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'MinIO did not become ready' >&2
+          docker logs minio >&2
+          exit 1
 
       - run: npm run build
       - run: npm run lint
