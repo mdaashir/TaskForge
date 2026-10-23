@@ -2,7 +2,7 @@ import type { FileAttachment } from '../types.ts';
 import { API_PATHS } from './apiPaths.ts';
 import axiosInstance from './axiosInstance.ts';
 
-export type AttachmentKind = 'tasks' | 'projects';
+export type AttachmentKind = 'tasks' | 'projects' | 'comments';
 
 export const fetchAttachments = async (
     kind: AttachmentKind,
