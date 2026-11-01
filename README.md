@@ -159,6 +159,24 @@ docker compose exec mongo mongosh taskforge --eval \
   'db.users.updateOne({ email: "you@example.com" }, { $set: { memberType: "ADMIN" } })'
 ```
 
+## Run the containerized stack
+
+Builds and runs the API, the SPA (served by nginx with `/api` proxied on the same origin), MongoDB
+and MinIO:
+
+```bash
+export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+export REFRESH_TOKEN_SECRET=$(node -e "console.log(require('crypto').randomBytes(64).toString('hex'))")
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
+The app is served on `http://localhost:8080`. Data lives in the `prod-mongo-data` and
+`prod-minio-data` volumes, separate from the dev stack. Stop it with
+`docker compose -f docker-compose.prod.yml down` (add `-v` to drop the data).
+
+Because nginx proxies `/api` on the same origin, the refresh cookie works without any CORS setup.
+Deployments behind TLS should keep `NODE_ENV=production`, which marks the cookie `Secure`.
+
 ## Environment variables
 
 ### Backend (`Backend/.env`)
@@ -318,6 +336,6 @@ production advisories are cleared in both apps.
 - Changing a password (self or through an admin) bumps the token version, so every existing access
   and refresh token stops working — including the session that made the change. A single `logout`
   only clears the current device's cookie; use `logout-all` to revoke other devices.
-- There are no coverage thresholds and no app Dockerfiles yet; the compose file is for local
-  dependencies only.
+- There are no coverage thresholds. `docker-compose.yml` runs the local dependencies;
+  `docker-compose.prod.yml` runs the containerized app.
 - `File.commentId` exists in the schema, but comment attachments are not wired up in the API or UI.
