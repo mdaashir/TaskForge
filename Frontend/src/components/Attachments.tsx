@@ -11,18 +11,12 @@ import {
     type AttachmentKind,
 } from '../utils/attachments.ts';
 import { downloadFile } from '../utils/download.ts';
-import { getErrorMessage, refId } from '../utils/helper.ts';
+import { formatFileSize, getErrorMessage, refId } from '../utils/helper.ts';
 
 interface Props {
     kind: AttachmentKind;
     targetId: string;
 }
-
-const formatSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-};
 
 const Attachments = ({ kind, targetId }: Props) => {
     const { user } = useAuth();
@@ -116,7 +110,7 @@ const Attachments = ({ kind, targetId }: Props) => {
                             <span className="truncate text-slate-700">{file.originalName}</span>
                             <span className="flex items-center gap-2">
                                 <span className="text-xs text-slate-400">
-                                    {formatSize(file.size)}
+                                    {formatFileSize(file.size)}
                                 </span>
                                 <button
                                     type="button"

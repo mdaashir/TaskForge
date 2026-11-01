@@ -45,7 +45,7 @@ export const API_PATHS = {
         projects: `${REPORTS}/projects`,
     },
     files: {
-        byTarget: (kind: 'tasks' | 'projects', id: string) => `${FILES}/${kind}/${id}`,
+        byTarget: (kind: 'tasks' | 'projects' | 'comments', id: string) => `${FILES}/${kind}/${id}`,
         byId: (id: string) => `${FILES}/${id}`,
     },
     comments: {

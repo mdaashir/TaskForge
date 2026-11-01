@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
+import { FiPaperclip, FiTrash2 } from 'react-icons/fi';
 import { useAuth } from '../context/useAuth.ts';
-import type { TaskComment } from '../types.ts';
+import type { FileAttachment, TaskComment } from '../types.ts';
+import { API_PATHS } from '../utils/apiPaths.ts';
+import { deleteAttachment, uploadAttachment } from '../utils/attachments.ts';
 import {
     createTaskComment,
     deleteTaskComment,
     fetchTaskComments,
     updateTaskComment,
 } from '../utils/comments.ts';
-import { getErrorMessage, refId, refName, relativeTime } from '../utils/helper.ts';
+import { downloadFile } from '../utils/download.ts';
+import { formatFileSize, getErrorMessage, refId, refName, relativeTime } from '../utils/helper.ts';
 
 const textareaClass =
     'w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-primary';
@@ -18,6 +22,7 @@ const TaskComments = ({ taskId }: { taskId: string }) => {
     const [comments, setComments] = useState<TaskComment[]>([]);
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState(false);
+    const [attaching, setAttaching] = useState<string | null>(null);
     const [draft, setDraft] = useState('');
     const [replyTo, setReplyTo] = useState<string | null>(null);
     const [replyDraft, setReplyDraft] = useState('');
@@ -82,6 +87,41 @@ const TaskComments = ({ taskId }: { taskId: string }) => {
             toast.error(getErrorMessage(error));
         }
     };
+
+    const attach = async (commentId: string, file: File) => {
+        setAttaching(commentId);
+        try {
+            await uploadAttachment('comments', commentId, file);
+            toast.success('Attachment added');
+            await load();
+        } catch (error) {
+            toast.error(getErrorMessage(error));
+        } finally {
+            setAttaching(null);
+        }
+    };
+
+    const download = async (file: FileAttachment) => {
+        try {
+            await downloadFile(API_PATHS.files.byId(file._id), {}, file.originalName);
+        } catch (error) {
+            toast.error(getErrorMessage(error));
+        }
+    };
+
+    const removeAttachment = async (file: FileAttachment) => {
+        if (!window.confirm(`Delete "${file.originalName}"?`)) return;
+        try {
+            await deleteAttachment(file._id);
+            toast.success('Attachment deleted');
+            await load();
+        } catch (error) {
+            toast.error(getErrorMessage(error));
+        }
+    };
+
+    const canDeleteAttachment = (file: FileAttachment) =>
+        user?.memberType === 'ADMIN' || refId(file.uploadedBy) === user?._id;
 
     const canModify = (comment: TaskComment) =>
         user?.memberType === 'ADMIN' || refId(comment.createdBy) === user?._id;
@@ -164,6 +204,54 @@ const TaskComments = ({ taskId }: { taskId: string }) => {
             ) : (
                 <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{comment.text}</p>
             )}
+
+            {comment.attachments && comment.attachments.length > 0 && (
+                <ul className="mt-2 space-y-1">
+                    {comment.attachments.map((file) => (
+                        <li
+                            key={file._id}
+                            className="flex items-center justify-between gap-2 text-xs"
+                        >
+                            <button
+                                type="button"
+                                onClick={() => download(file)}
+                                className="truncate text-primary"
+                                title="Download"
+                            >
+                                {file.originalName}
+                            </button>
+                            <span className="flex items-center gap-2 text-slate-400">
+                                {formatFileSize(file.size)}
+                                {canDeleteAttachment(file) && (
+                                    <button
+                                        type="button"
+                                        onClick={() => removeAttachment(file)}
+                                        className="text-red-600"
+                                        title="Delete"
+                                    >
+                                        <FiTrash2 />
+                                    </button>
+                                )}
+                            </span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+
+            <label className="mt-1 inline-flex cursor-pointer items-center gap-1 text-xs font-medium text-primary">
+                <FiPaperclip />
+                {attaching === comment._id ? 'Attaching…' : 'Attach'}
+                <input
+                    type="file"
+                    className="hidden"
+                    disabled={attaching === comment._id}
+                    onChange={(event) => {
+                        const file = event.target.files?.[0];
+                        if (file) void attach(comment._id, file);
+                        event.target.value = '';
+                    }}
+                />
+            </label>
 
             {replyTo === comment._id && (
                 <div className="mt-2 space-y-2">
