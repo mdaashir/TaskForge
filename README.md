@@ -338,4 +338,3 @@ production advisories are cleared in both apps.
   only clears the current device's cookie; use `logout-all` to revoke other devices.
 - There are no coverage thresholds. `docker-compose.yml` runs the local dependencies;
   `docker-compose.prod.yml` runs the containerized app.
-- `File.commentId` exists in the schema, but comment attachments are not wired up in the API or UI.
