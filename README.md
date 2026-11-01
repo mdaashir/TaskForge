@@ -284,9 +284,11 @@ end in `_test`. The API app is imported directly (`src/app.ts`), so no port is o
 cd Frontend && npm test
 ```
 
-CI (`.github/workflows/ci.yml`) runs on every push to `base` and every PR into `base`: the backend
-job starts MongoDB and MinIO, then runs typecheck (including tests), lint and the suite; the
-frontend job runs lint, build and its suite.
+CI (`.github/workflows/ci.yml`) runs on every push to `base` and every PR into `base`,
+`pre-staging`, `staging` or `main`, and can be started manually. The backend job starts MongoDB and
+MinIO, then runs typecheck (including tests), lint and the suite; the frontend job runs lint, build
+and its suite. Superseded runs on the same ref are cancelled, and the workflow runs with
+`contents: read`.
 
 ### Dependency audit
 
