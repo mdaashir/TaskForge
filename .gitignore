@@ -105,6 +105,3 @@ Thumbs.db
 
 # Local files
 *.local
-
-# Docker
-.dockerignore

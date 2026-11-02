@@ -1,0 +1,62 @@
+services:
+  mongo:
+    image: mongo:7
+    volumes:
+      - prod-mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', 'db.runCommand({ ping: 1 }).ok']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: bitnamilegacy/minio:latest
+    user: root
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_DEFAULT_BUCKETS: taskforge-attachments
+    volumes:
+      - prod-minio-data:/bitnami/minio/data
+
+  backend:
+    build: ./Backend
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 8000
+      PREFIX: /api
+      CLIENT_URL: http://localhost:8080
+      MONGO_URI: mongodb://mongo:27017/taskforge
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET before starting the stack}
+      REFRESH_TOKEN_SECRET: ${REFRESH_TOKEN_SECRET:?Set REFRESH_TOKEN_SECRET before starting the stack}
+      S3_ENDPOINT: http://minio:9000
+      S3_REGION: us-east-1
+      S3_BUCKET: taskforge-attachments
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:8000/api/auth/profile').then((response) => process.exit(response.status === 401 ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  web:
+    build: ./Frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - '8080:80'
+
+volumes:
+  prod-mongo-data:
+  prod-minio-data:
